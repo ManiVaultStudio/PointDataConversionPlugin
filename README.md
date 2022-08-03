@@ -1,2 +1,2 @@
-# DataConversionPlugin
-HDPS plugin for data conversion
+# Point data conversion plugin
+HDPS plugin for point data conversion
