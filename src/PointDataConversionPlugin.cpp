@@ -107,19 +107,21 @@ PluginTriggerActions PointDataConversionPluginFactory::getPluginTriggerActions(c
 
     const auto numberOfDatasets = datasets.count();
 
-    if (PluginFactory::areAllDatasetsOfTheSameType(datasets, "Points")) {
-        if (numberOfDatasets >= 1 && datasets.first()->getDataType().getTypeString() == "Points") {
+    if (PluginFactory::areAllDatasetsOfTheSameType(datasets, PointType)) {
+        if (numberOfDatasets >= 1 && datasets.first()->getDataType() == PointType) {
             const auto addPluginTriggerAction = [this, &pluginTriggerActions, datasets](const PointDataConversionPlugin::Type& type) -> void {
                 const auto typeName = PointDataConversionPlugin::getTypeName(type);
 
                 auto pluginTriggerAction = createPluginTriggerAction(typeName, QString("Perform %1 data conversion").arg(typeName), datasets);
 
                 connect(pluginTriggerAction, &QAction::triggered, [this, datasets, type]() -> void {
-                    auto pluginInstance = dynamic_cast<PointDataConversionPlugin*>(Application::core()->requestPlugin(getKind()));
+                    for (auto dataset : datasets) {
+                        auto pluginInstance = dynamic_cast<PointDataConversionPlugin*>(Application::core()->requestPlugin(getKind()));
 
-                    pluginInstance->setInputDatasets(datasets);
-                    pluginInstance->setType(type);
-                    pluginInstance->transform();
+                        pluginInstance->setInputDatasets(datasets);
+                        pluginInstance->setType(type);
+                        pluginInstance->transform();
+                    }
                 });
 
                 pluginTriggerActions << pluginTriggerAction;
