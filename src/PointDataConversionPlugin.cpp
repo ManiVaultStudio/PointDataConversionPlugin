@@ -37,7 +37,7 @@ void PointDataConversionPlugin::transform()
 
             points->getDataHierarchyItem().setTaskName("Converting");
             points->getDataHierarchyItem().setTaskRunning();
-            points->getDataHierarchyItem().setTaskDescription(QString("Converting").arg(getTypeName(_type)));
+            points->getDataHierarchyItem().setTaskDescription(QString("%1 conversion").arg(getTypeName(_type)));
 
             points->visitData([this, &points](auto pointData) {
                 std::uint32_t noPointsProcessed = 0;
@@ -101,25 +101,21 @@ PointDataConversionPlugin* PointDataConversionPluginFactory::produce()
     return new PointDataConversionPlugin(this);
 }
 
-QList<PluginTriggerAction*> PointDataConversionPluginFactory::getPluginTriggerActions(const hdps::Datasets& datasets) const
+PluginTriggerActions PointDataConversionPluginFactory::getPluginTriggerActions(const hdps::Datasets& datasets) const
 {
-    QList<PluginTriggerAction*> pluginTriggerActions;
-
-    const auto getPluginInstance = [this]() -> PointDataConversionPlugin* {
-        return dynamic_cast<PointDataConversionPlugin*>(Application::core()->requestPlugin(getKind()));
-    };
+    PluginTriggerActions pluginTriggerActions;
 
     const auto numberOfDatasets = datasets.count();
 
     if (PluginFactory::areAllDatasetsOfTheSameType(datasets, "Points")) {
         if (numberOfDatasets >= 1 && datasets.first()->getDataType().getTypeString() == "Points") {
-            const auto addPluginTriggerAction = [this, &pluginTriggerActions, datasets, getPluginInstance](const PointDataConversionPlugin::Type& type) -> void {
+            const auto addPluginTriggerAction = [this, &pluginTriggerActions, datasets](const PointDataConversionPlugin::Type& type) -> void {
                 const auto typeName = PointDataConversionPlugin::getTypeName(type);
 
                 auto pluginTriggerAction = createPluginTriggerAction(typeName, QString("Perform %1 data conversion").arg(typeName), datasets);
 
-                connect(pluginTriggerAction, &QAction::triggered, [this, getPluginInstance, datasets, type]() -> void {
-                    auto pluginInstance = getPluginInstance();
+                connect(pluginTriggerAction, &QAction::triggered, [this, datasets, type]() -> void {
+                    auto pluginInstance = dynamic_cast<PointDataConversionPlugin*>(Application::core()->requestPlugin(getKind()));
 
                     pluginInstance->setInputDatasets(datasets);
                     pluginInstance->setType(type);
@@ -133,6 +129,16 @@ QList<PluginTriggerAction*> PointDataConversionPluginFactory::getPluginTriggerAc
             addPluginTriggerAction(PointDataConversionPlugin::Type::ArcSin5);
         }
     }
+
+    return pluginTriggerActions;
+}
+
+PluginTriggerActions PointDataConversionPluginFactory::getPluginTriggerActions(const hdps::DataTypes& dataTypes) const
+{
+    PluginTriggerActions pluginTriggerActions;
+
+    //if (datasetType != PointType)
+    //    return;
 
     return pluginTriggerActions;
 }

@@ -94,9 +94,16 @@ public:
     PointDataConversionPlugin* produce() override;
 
     /**
-     * Get a list of plugin trigger actions given a vector of input datasets
+     * Get plugin trigger actions given \p datasets
      * @param datasets Vector of input datasets
-     * @return List of plugin trigger actions
+     * @return Vector of plugin trigger actions
      */
-    QList<PluginTriggerAction*> getPluginTriggerActions(const hdps::Datasets& datasets) const override;
+    PluginTriggerActions getPluginTriggerActions(const hdps::Datasets& datasets) const override;
+
+    /**
+     * Get plugin trigger actions given \p dataTypes
+     * @param datasetTypes Vector of input data types
+     * @return Vector of plugin trigger actions
+     */
+    PluginTriggerActions getPluginTriggerActions(const hdps::DataTypes& dataTypes) const override;
 };
