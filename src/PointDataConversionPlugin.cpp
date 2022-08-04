@@ -14,12 +14,12 @@ using namespace hdps;
 
 const QMap<PointDataConversionPlugin::Type, QString> PointDataConversionPlugin::types = QMap<PointDataConversionPlugin::Type, QString>({
     { PointDataConversionPlugin::Type::Log2, "log2(value+1)" },
-    { PointDataConversionPlugin::Type::ArcSin5, "arcsin(value/5.0)" }
+    { PointDataConversionPlugin::Type::ArcSin, "arcsin(value/factor)" }
 });
 
 PointDataConversionPlugin::PointDataConversionPlugin(const PluginFactory* factory) :
     TransformationPlugin(factory),
-    _type(Type::ArcSin5)
+    _type(Type::ArcSin)
 {
 }
 
@@ -50,7 +50,7 @@ void PointDataConversionPlugin::transform()
                                 point[dimensionIndex] = log2(point[dimensionIndex] + 1);
                                 break;
 
-                            case PointDataConversionPlugin::Type::ArcSin5:
+                            case PointDataConversionPlugin::Type::ArcSin:
                                 point[dimensionIndex] = asinh(point[dimensionIndex] / 5.0f);
                                 break;
 
@@ -96,6 +96,11 @@ QString PointDataConversionPlugin::getTypeName(const Type& type)
     return types[type];
 }
 
+PointDataConversionPluginFactory::PointDataConversionPluginFactory() :
+    _arcSinFactorAction(this, "Factor", 1.0f, 10.0f, 5.0f, 5.0f, 1)
+{
+}
+
 PointDataConversionPlugin* PointDataConversionPluginFactory::produce()
 {
     return new PointDataConversionPlugin(this);
@@ -128,7 +133,7 @@ PluginTriggerActions PointDataConversionPluginFactory::getPluginTriggerActions(c
             };
 
             addPluginTriggerAction(PointDataConversionPlugin::Type::Log2);
-            addPluginTriggerAction(PointDataConversionPlugin::Type::ArcSin5);
+            addPluginTriggerAction(PointDataConversionPlugin::Type::ArcSin);
         }
     }
 
@@ -139,8 +144,47 @@ PluginTriggerActions PointDataConversionPluginFactory::getPluginTriggerActions(c
 {
     PluginTriggerActions pluginTriggerActions;
 
-    //if (datasetType != PointType)
-    //    return;
+    if (dataTypes.count(PointType) == dataTypes.count()) {
+        const auto addPluginTriggerAction = [this, &pluginTriggerActions](const PointDataConversionPlugin::Type& type) -> void {
+            const auto typeName = PointDataConversionPlugin::getTypeName(type);
+
+            auto pluginTriggerAction = createPluginTriggerAction(typeName, QString("Perform %1 data conversion").arg(typeName), Datasets());
+
+            pluginTriggerAction->setConfigurationAction(const_cast<PointDataConversionPluginFactory*>(this)->getConfigurationAction(type));
+
+            connect(pluginTriggerAction, &QAction::triggered, [this, type, pluginTriggerAction]() -> void {
+                for (auto dataset : pluginTriggerAction->getDatasets()) {
+                    auto pluginInstance = dynamic_cast<PointDataConversionPlugin*>(Application::core()->requestPlugin(getKind()));
+
+                    pluginInstance->setInputDatasets(pluginTriggerAction->getDatasets());
+                    pluginInstance->setType(type);
+                    pluginInstance->transform();
+                }
+                });
+
+            pluginTriggerActions << pluginTriggerAction;
+        };
+
+        addPluginTriggerAction(PointDataConversionPlugin::Type::Log2);
+        addPluginTriggerAction(PointDataConversionPlugin::Type::ArcSin);
+    }
 
     return pluginTriggerActions;
+}
+
+WidgetAction* PointDataConversionPluginFactory::getConfigurationAction(const PointDataConversionPlugin::Type& type)
+{
+    switch (type)
+    {
+        case PointDataConversionPlugin::Type::Log2:
+            return nullptr;
+
+        case PointDataConversionPlugin::Type::ArcSin:
+        {
+            return &_arcSinFactorAction;
+        }
+
+        default:
+            break;
+    }
 }

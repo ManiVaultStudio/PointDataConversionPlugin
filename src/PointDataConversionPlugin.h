@@ -23,8 +23,8 @@ public:
 
     /** Point data conversion type */
     enum class Type {
-        Log2,       /** log2(1 + value) */
-        ArcSin5     /** asinh(value / 5.0) */
+        Log2,       /** log2(value+1) */
+        ArcSin      /** asinh(value/factor) */
     };
 
     static const QMap<Type, QString> types;
@@ -85,7 +85,7 @@ class PointDataConversionPluginFactory : public TransformationPluginFactory
 public:
 
     /** Default constructor */
-    PointDataConversionPluginFactory() {}
+    PointDataConversionPluginFactory();
 
     /** Destructor */
     ~PointDataConversionPluginFactory() override {}
@@ -106,4 +106,13 @@ public:
      * @return Vector of plugin trigger actions
      */
     PluginTriggerActions getPluginTriggerActions(const hdps::DataTypes& dataTypes) const override;
+
+    /**
+     * Get configuration action for \p type
+     * @return Pointer to configuration action (may be null)
+     */
+    WidgetAction* getConfigurationAction(const PointDataConversionPlugin::Type& type);
+
+private:
+    DecimalAction   _arcSinFactorAction;    /** Factor for arcsin(value/factor) conversion */
 };
