@@ -2,6 +2,8 @@
 
 #include <PointData.h>
 
+#include <actions/PluginTriggerAction.h>
+
 #include <cmath>
 
 #include <QDebug>
@@ -99,9 +101,9 @@ PointDataConversionPlugin* PointDataConversionPluginFactory::produce()
     return new PointDataConversionPlugin(this);
 }
 
-QList<TriggerAction*> PointDataConversionPluginFactory::getProducers(const hdps::Datasets& datasets) const
+QList<PluginTriggerAction*> PointDataConversionPluginFactory::getPluginTriggerActions(const hdps::Datasets& datasets) const
 {
-    QList<TriggerAction*> producerActions;
+    QList<PluginTriggerAction*> pluginTriggerActions;
 
     const auto getPluginInstance = [this]() -> PointDataConversionPlugin* {
         return dynamic_cast<PointDataConversionPlugin*>(Application::core()->requestPlugin(getKind()));
@@ -111,12 +113,12 @@ QList<TriggerAction*> PointDataConversionPluginFactory::getProducers(const hdps:
 
     if (PluginFactory::areAllDatasetsOfTheSameType(datasets, "Points")) {
         if (numberOfDatasets >= 1 && datasets.first()->getDataType().getTypeString() == "Points") {
-            const auto addProducerAction = [this, &producerActions, datasets, getPluginInstance](const PointDataConversionPlugin::Type& type) -> void {
+            const auto addPluginTriggerAction = [this, &pluginTriggerActions, datasets, getPluginInstance](const PointDataConversionPlugin::Type& type) -> void {
                 const auto typeName = PointDataConversionPlugin::getTypeName(type);
 
-                auto producerAction = createProducerAction(typeName, QString("Perform %1 data conversion").arg(typeName));
+                auto pluginTriggerAction = createPluginTriggerAction(typeName, QString("Perform %1 data conversion").arg(typeName), datasets);
 
-                connect(producerAction, &QAction::triggered, [this, getPluginInstance, datasets, type]() -> void {
+                connect(pluginTriggerAction, &QAction::triggered, [this, getPluginInstance, datasets, type]() -> void {
                     auto pluginInstance = getPluginInstance();
 
                     pluginInstance->setInputDatasets(datasets);
@@ -124,13 +126,13 @@ QList<TriggerAction*> PointDataConversionPluginFactory::getProducers(const hdps:
                     pluginInstance->transform();
                 });
 
-                producerActions << producerAction;
+                pluginTriggerActions << pluginTriggerAction;
             };
 
-            addProducerAction(PointDataConversionPlugin::Type::Log2);
-            addProducerAction(PointDataConversionPlugin::Type::ArcSin5);
+            addPluginTriggerAction(PointDataConversionPlugin::Type::Log2);
+            addPluginTriggerAction(PointDataConversionPlugin::Type::ArcSin5);
         }
     }
 
-    return producerActions;
+    return pluginTriggerActions;
 }
