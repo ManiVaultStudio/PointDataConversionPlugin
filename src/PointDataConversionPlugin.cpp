@@ -152,7 +152,7 @@ PluginTriggerActions PointDataConversionPluginFactory::getPluginTriggerActions(c
 
             pluginTriggerAction->setConfigurationAction(const_cast<PointDataConversionPluginFactory*>(this)->getConfigurationAction(type));
 
-            connect(pluginTriggerAction, &QAction::triggered, [this, type, pluginTriggerAction]() -> void {
+            connect(pluginTriggerAction, &QAction::triggered, this, [this, type, pluginTriggerAction]() -> void {
                 for (auto dataset : pluginTriggerAction->getDatasets()) {
                     auto pluginInstance = dynamic_cast<PointDataConversionPlugin*>(Application::core()->requestPlugin(getKind()));
 
@@ -160,7 +160,7 @@ PluginTriggerActions PointDataConversionPluginFactory::getPluginTriggerActions(c
                     pluginInstance->setType(type);
                     pluginInstance->transform();
                 }
-                });
+            });
 
             pluginTriggerActions << pluginTriggerAction;
         };
