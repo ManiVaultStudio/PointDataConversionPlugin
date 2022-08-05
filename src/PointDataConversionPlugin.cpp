@@ -174,17 +174,28 @@ PluginTriggerActions PointDataConversionPluginFactory::getPluginTriggerActions(c
 
 WidgetAction* PointDataConversionPluginFactory::getConfigurationAction(const PointDataConversionPlugin::Type& type)
 {
+    const auto createGroupAction = [this](const WidgetActions& widgetActions) -> GroupAction* {
+        auto groupAction = new GroupAction(this);
+
+        groupAction->setText("Settings");
+        groupAction->setToolTip("Data conversion settings");
+        groupAction->setLabelSizingType(GroupAction::LabelSizingType::Auto);
+        groupAction->setActions(widgetActions);
+
+        return groupAction;
+    };
+
     switch (type)
     {
         case PointDataConversionPlugin::Type::Log2:
             return nullptr;
 
         case PointDataConversionPlugin::Type::ArcSin:
-        {
-            return &_arcSinFactorAction;
-        }
+            return createGroupAction({ &_arcSinFactorAction });
 
         default:
             break;
     }
+
+    return nullptr;
 }
