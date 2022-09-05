@@ -1,0 +1,5 @@
+{
+  "name": "PointDataConversion",
+  "version": "1",
+  "dependencies": [ "Points" ]
+}
