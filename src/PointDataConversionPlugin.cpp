@@ -97,7 +97,7 @@ QString PointDataConversionPlugin::getTypeName(const Type& type)
 }
 
 PointDataConversionPluginFactory::PointDataConversionPluginFactory() :
-    _arcSinFactorAction(this, "Factor", 1.0f, 10.0f, 5.0f, 5.0f, 1)
+    _arcSinFactorAction(this, "Factor", 1.0f, 100.0f, 5.0f, 5.0f, 1)
 {
 }
 
