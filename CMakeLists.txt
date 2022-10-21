@@ -27,6 +27,8 @@ source_group(Plugin FILES ${SOURCES})
 
 include_directories("$ENV{HDPS_INSTALL_DIR}/$<CONFIGURATION>/include/")
 
+file(TO_CMAKE_PATH $ENV{HDPS_INSTALL_DIR} INSTALL_DIR)
+
 add_library(${PROJECT} SHARED ${SOURCES})
 
 target_link_libraries(${PROJECT} Qt6::Widgets)
