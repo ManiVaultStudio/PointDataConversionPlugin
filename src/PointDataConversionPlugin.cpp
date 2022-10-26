@@ -13,8 +13,8 @@ Q_PLUGIN_METADATA(IID "nl.BioVault.PointDataConversionPlugin")
 using namespace hdps;
 
 const QMap<PointDataConversionPlugin::Type, QString> PointDataConversionPlugin::types = QMap<PointDataConversionPlugin::Type, QString>({
-    { PointDataConversionPlugin::Type::Log2, "log2(value+1)" },
-    { PointDataConversionPlugin::Type::ArcSin, "arcsin(value/factor)" }
+    { PointDataConversionPlugin::Type::Log2, "Log2" },
+    { PointDataConversionPlugin::Type::ArcSin, "Arcsin" }
 });
 
 PointDataConversionPlugin::PointDataConversionPlugin(const PluginFactory* factory) :
@@ -97,7 +97,7 @@ QString PointDataConversionPlugin::getTypeName(const Type& type)
 }
 
 PointDataConversionPluginFactory::PointDataConversionPluginFactory() :
-    _arcSinFactorAction(this, "Factor", 1.0f, 10.0f, 5.0f, 5.0f, 1)
+    _arcSinFactorAction(this, "Factor", 1.0f, 100.0f, 5.0f, 5.0f, 1)
 {
 }
 
@@ -117,7 +117,7 @@ PluginTriggerActions PointDataConversionPluginFactory::getPluginTriggerActions(c
             const auto addPluginTriggerAction = [this, &pluginTriggerActions, datasets](const PointDataConversionPlugin::Type& type) -> void {
                 const auto typeName = PointDataConversionPlugin::getTypeName(type);
 
-                auto pluginTriggerAction = createPluginTriggerAction(typeName, QString("Perform %1 data conversion").arg(typeName), datasets);
+                auto pluginTriggerAction = createPluginTriggerAction(QString("Conversion/%1").arg(typeName), QString("Perform %1 data conversion").arg(typeName), datasets);
 
                 connect(pluginTriggerAction, &QAction::triggered, [this, datasets, type]() -> void {
                     for (auto dataset : datasets) {
@@ -148,7 +148,7 @@ PluginTriggerActions PointDataConversionPluginFactory::getPluginTriggerActions(c
         const auto addPluginTriggerAction = [this, &pluginTriggerActions](const PointDataConversionPlugin::Type& type) -> void {
             const auto typeName = PointDataConversionPlugin::getTypeName(type);
 
-            auto pluginTriggerAction = createPluginTriggerAction(typeName, QString("Perform %1 data conversion").arg(typeName), Datasets());
+            auto pluginTriggerAction = createPluginTriggerAction(QString("Conversion/%1").arg(typeName), QString("Perform %1 data conversion").arg(typeName), Datasets());
 
             pluginTriggerAction->setConfigurationAction(const_cast<PointDataConversionPluginFactory*>(this)->getConfigurationAction(type));
 
