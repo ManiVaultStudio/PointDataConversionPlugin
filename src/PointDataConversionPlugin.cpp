@@ -72,7 +72,7 @@ void PointDataConversionPlugin::transform()
             points->getDataHierarchyItem().setTaskProgress(1.0f);
             points->getDataHierarchyItem().setTaskFinished();
 
-            _core->notifyDatasetChanged(points);
+            events().notifyDatasetChanged(points);
         }
         points->setLocked(false);
     }
@@ -117,11 +117,9 @@ PluginTriggerActions PointDataConversionPluginFactory::getPluginTriggerActions(c
             const auto addPluginTriggerAction = [this, &pluginTriggerActions, datasets](const PointDataConversionPlugin::Type& type) -> void {
                 const auto typeName = PointDataConversionPlugin::getTypeName(type);
 
-                auto pluginTriggerAction = createPluginTriggerAction(QString("Conversion/%1").arg(typeName), QString("Perform %1 data conversion").arg(typeName), datasets);
-
-                connect(pluginTriggerAction, &QAction::triggered, [this, datasets, type]() -> void {
+                auto pluginTriggerAction = new PluginTriggerAction(const_cast<PointDataConversionPluginFactory*>(this), this, QString("Conversion/%1").arg(typeName), QString("Perform %1 data conversion").arg(typeName), getIcon(), [this, datasets, type](PluginTriggerAction& pluginTriggerAction) -> void {
                     for (auto dataset : datasets) {
-                        auto pluginInstance = dynamic_cast<PointDataConversionPlugin*>(Application::core()->requestPlugin(getKind()));
+                        auto pluginInstance = dynamic_cast<PointDataConversionPlugin*>(plugins().requestPlugin(getKind()));
 
                         pluginInstance->setInputDatasets(datasets);
                         pluginInstance->setType(type);
@@ -148,19 +146,17 @@ PluginTriggerActions PointDataConversionPluginFactory::getPluginTriggerActions(c
         const auto addPluginTriggerAction = [this, &pluginTriggerActions](const PointDataConversionPlugin::Type& type) -> void {
             const auto typeName = PointDataConversionPlugin::getTypeName(type);
 
-            auto pluginTriggerAction = createPluginTriggerAction(QString("Conversion/%1").arg(typeName), QString("Perform %1 data conversion").arg(typeName), Datasets());
+            auto pluginTriggerAction = new PluginTriggerAction(const_cast<PointDataConversionPluginFactory*>(this), this, QString("Conversion/%1").arg(typeName), QString("Perform %1 data conversion").arg(typeName), getIcon(), [this, type](PluginTriggerAction& pluginTriggerAction) -> void {
+                for (auto dataset : Datasets()) {
+                    auto pluginInstance = dynamic_cast<PointDataConversionPlugin*>(plugins().requestPlugin(getKind()));
 
-            pluginTriggerAction->setConfigurationAction(const_cast<PointDataConversionPluginFactory*>(this)->getConfigurationAction(type));
-
-            connect(pluginTriggerAction, &QAction::triggered, this, [this, type, pluginTriggerAction]() -> void {
-                for (auto dataset : pluginTriggerAction->getDatasets()) {
-                    auto pluginInstance = dynamic_cast<PointDataConversionPlugin*>(Application::core()->requestPlugin(getKind()));
-
-                    pluginInstance->setInputDatasets(pluginTriggerAction->getDatasets());
+                    pluginInstance->setInputDatasets(Datasets());
                     pluginInstance->setType(type);
                     pluginInstance->transform();
                 }
             });
+
+            pluginTriggerAction->setConfigurationAction(const_cast<PointDataConversionPluginFactory*>(this)->getConfigurationAction(type));
 
             pluginTriggerActions << pluginTriggerAction;
         };
