@@ -1,6 +1,6 @@
 #include "PointDataConversionPlugin.h"
 
-#include <PointData.h>
+#include <PointData/PointData.h>
 
 #include <actions/PluginTriggerAction.h>
 
