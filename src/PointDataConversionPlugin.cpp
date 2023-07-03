@@ -72,7 +72,7 @@ void PointDataConversionPlugin::transform()
             points->getDataHierarchyItem().setTaskProgress(1.0f);
             points->getDataHierarchyItem().setTaskFinished();
 
-            events().notifyDatasetChanged(points);
+            events().notifyDatasetDataChanged(points);
         }
         points->setLocked(false);
     }
@@ -97,7 +97,7 @@ QString PointDataConversionPlugin::getTypeName(const Type& type)
 }
 
 PointDataConversionPluginFactory::PointDataConversionPluginFactory() :
-    _arcSinFactorAction(this, "Factor", 1.0f, 100.0f, 5.0f, 5.0f, 1)
+    _arcSinFactorAction(this, "Factor", 1.0f, 100.0f, 5.0f, 5.0f)
 {
 }
 
@@ -170,13 +170,13 @@ PluginTriggerActions PointDataConversionPluginFactory::getPluginTriggerActions(c
 
 WidgetAction* PointDataConversionPluginFactory::getConfigurationAction(const PointDataConversionPlugin::Type& type)
 {
-    const auto createGroupAction = [this](const WidgetActions& widgetActions) -> GroupAction* {
-        auto groupAction = new GroupAction(this);
+    const auto createGroupAction = [this](WidgetAction& widgetAction) -> GroupAction* {
+        auto groupAction = new GroupAction(this, "PointDataConversionGroupAction");
 
         groupAction->setText("Settings");
         groupAction->setToolTip("Data conversion settings");
         groupAction->setLabelSizingType(GroupAction::LabelSizingType::Auto);
-        groupAction->setActions(widgetActions);
+        groupAction->addAction(&widgetAction);
 
         return groupAction;
     };
@@ -187,7 +187,7 @@ WidgetAction* PointDataConversionPluginFactory::getConfigurationAction(const Poi
             return nullptr;
 
         case PointDataConversionPlugin::Type::ArcSin:
-            return createGroupAction({ &_arcSinFactorAction });
+            return createGroupAction(_arcSinFactorAction);
 
         default:
             break;
