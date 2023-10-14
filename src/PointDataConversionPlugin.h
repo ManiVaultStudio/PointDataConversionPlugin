@@ -4,9 +4,9 @@
 
 #include <Dataset.h>
 
-using namespace hdps::plugin;
-using namespace hdps::gui;
-using namespace hdps::util;
+using namespace mv::plugin;
+using namespace mv::gui;
+using namespace mv::util;
 
 class QLabel;
 
@@ -77,7 +77,7 @@ private:
  */
 class PointDataConversionPluginFactory : public TransformationPluginFactory
 {
-    Q_INTERFACES(hdps::plugin::TransformationPluginFactory hdps::plugin::PluginFactory)
+    Q_INTERFACES(mv::plugin::TransformationPluginFactory mv::plugin::PluginFactory)
     Q_OBJECT
     Q_PLUGIN_METADATA(IID   "nl.BioVault.PointDataConversionPlugin"
                       FILE  "PointDataConversionPlugin.json")
@@ -98,14 +98,14 @@ public:
      * @param datasets Vector of input datasets
      * @return Vector of plugin trigger actions
      */
-    PluginTriggerActions getPluginTriggerActions(const hdps::Datasets& datasets) const override;
+    PluginTriggerActions getPluginTriggerActions(const mv::Datasets& datasets) const override;
 
     /**
      * Get plugin trigger actions given \p dataTypes
      * @param datasetTypes Vector of input data types
      * @return Vector of plugin trigger actions
      */
-    PluginTriggerActions getPluginTriggerActions(const hdps::DataTypes& dataTypes) const override;
+    PluginTriggerActions getPluginTriggerActions(const mv::DataTypes& dataTypes) const override;
 
     /**
      * Get configuration action for \p type

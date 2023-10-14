@@ -10,7 +10,7 @@
 
 Q_PLUGIN_METADATA(IID "nl.BioVault.PointDataConversionPlugin")
 
-using namespace hdps;
+using namespace mv;
 
 const QMap<PointDataConversionPlugin::Type, QString> PointDataConversionPlugin::types = QMap<PointDataConversionPlugin::Type, QString>({
     { PointDataConversionPlugin::Type::Log2, "Log2" },
@@ -104,7 +104,7 @@ PointDataConversionPlugin* PointDataConversionPluginFactory::produce()
     return new PointDataConversionPlugin(this);
 }
 
-PluginTriggerActions PointDataConversionPluginFactory::getPluginTriggerActions(const hdps::Datasets& datasets) const
+PluginTriggerActions PointDataConversionPluginFactory::getPluginTriggerActions(const mv::Datasets& datasets) const
 {
     PluginTriggerActions pluginTriggerActions;
 
@@ -136,7 +136,7 @@ PluginTriggerActions PointDataConversionPluginFactory::getPluginTriggerActions(c
     return pluginTriggerActions;
 }
 
-PluginTriggerActions PointDataConversionPluginFactory::getPluginTriggerActions(const hdps::DataTypes& dataTypes) const
+PluginTriggerActions PointDataConversionPluginFactory::getPluginTriggerActions(const mv::DataTypes& dataTypes) const
 {
     PluginTriggerActions pluginTriggerActions;
 
