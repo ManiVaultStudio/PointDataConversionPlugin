@@ -35,9 +35,9 @@ void PointDataConversionPlugin::transform()
         {
             QApplication::processEvents();
 
-            points->getDataHierarchyItem().setTaskName("Converting");
-            points->getDataHierarchyItem().setTaskRunning();
-            points->getDataHierarchyItem().setTaskDescription(QString("%1 conversion").arg(getTypeName(_type)));
+            points->getDatasetTask().setName("Converting");
+            points->getDatasetTask().setRunning();
+            points->getDatasetTask().setProgressDescription(QString("%1 conversion").arg(getTypeName(_type)));
 
             points->visitData([this, &points](auto pointData) {
                 std::uint32_t noPointsProcessed = 0;
@@ -62,15 +62,15 @@ void PointDataConversionPlugin::transform()
                     ++noPointsProcessed;
 
                     if (noPointsProcessed % 1000 == 0) {
-                        points->getDataHierarchyItem().setTaskProgress(static_cast<float>(noPointsProcessed) / static_cast<float>(points->getNumPoints()));
+                        points->getDatasetTask().setProgress(static_cast<float>(noPointsProcessed) / static_cast<float>(points->getNumPoints()));
                         
                         QApplication::processEvents();
                     }
                 }
             });
 
-            points->getDataHierarchyItem().setTaskProgress(1.0f);
-            points->getDataHierarchyItem().setTaskFinished();
+            points->getDatasetTask().setProgress(1.0f);
+            points->getDatasetTask().setFinished();
 
             events().notifyDatasetDataChanged(points);
         }
