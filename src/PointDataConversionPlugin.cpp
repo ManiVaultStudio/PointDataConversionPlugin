@@ -31,50 +31,48 @@ void PointDataConversionPlugin::transform()
         if (!points.isValid())
             continue;
 
-        points->setLocked(true);
-        {
-            QApplication::processEvents();
-
-            points->getDatasetTask().setName("Converting");
-            points->getDatasetTask().setRunning();
-            points->getDatasetTask().setProgressDescription(QString("%1 conversion").arg(getTypeName(_type)));
-
-            points->visitData([this, &points](auto pointData) {
-                std::uint32_t noPointsProcessed = 0;
-
-                for (auto point : pointData) {
-                    for (std::int32_t dimensionIndex = 0; dimensionIndex < points->getNumDimensions(); dimensionIndex++) {
-                        switch (_type)
-                        {
-                            case PointDataConversionPlugin::Type::Log2:
-                                point[dimensionIndex] = log2(point[dimensionIndex] + 1);
-                                break;
-
-                            case PointDataConversionPlugin::Type::ArcSin:
-                                point[dimensionIndex] = asinh(point[dimensionIndex] / 5.0f);
-                                break;
-
-                            default:
-                                break;
-                        }
-                    }
-
-                    ++noPointsProcessed;
-
-                    if (noPointsProcessed % 1000 == 0) {
-                        points->getDatasetTask().setProgress(static_cast<float>(noPointsProcessed) / static_cast<float>(points->getNumPoints()));
-                        
-                        QApplication::processEvents();
+        QApplication::processEvents();
+        
+        auto& task = points->getTask();
+        
+        task.setName("Converting");
+        task.setRunning();
+        task.setProgressDescription(QString("%1 conversion").arg(getTypeName(_type)));
+        
+        points->visitData([this, &points, &task](auto pointData) {
+            std::uint32_t noPointsProcessed = 0;
+        
+            for (auto point : pointData) {
+                for (std::int32_t dimensionIndex = 0; dimensionIndex < points->getNumDimensions(); dimensionIndex++) {
+                    switch (_type)
+                    {
+                        case PointDataConversionPlugin::Type::Log2:
+                            point[dimensionIndex] = log2(point[dimensionIndex] + 1);
+                            break;
+        
+                        case PointDataConversionPlugin::Type::ArcSin:
+                            point[dimensionIndex] = asinh(point[dimensionIndex] / 5.0f);
+                            break;
+        
+                        default:
+                            break;
                     }
                 }
-            });
-
-            points->getDatasetTask().setProgress(1.0f);
-            points->getDatasetTask().setFinished();
-
-            events().notifyDatasetDataChanged(points);
-        }
-        points->setLocked(false);
+        
+                ++noPointsProcessed;
+        
+                if (noPointsProcessed % 1000 == 0) {
+                    task.setProgress(static_cast<float>(noPointsProcessed) / static_cast<float>(points->getNumPoints()));
+                    
+                    QApplication::processEvents();
+                }
+            }
+        });
+        
+        task.setProgress(1.0f);
+        task.setFinished();
+        
+        events().notifyDatasetDataChanged(points);
     }
 }
 
