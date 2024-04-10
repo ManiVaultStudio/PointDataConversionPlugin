@@ -1,4 +1,4 @@
-# Point data conversion plugin ![Build Status](https://github.com/ManiVaultStudio/PointDataConversionPlugin/actions/workflows/build.yml/badge.svg?branch=master)
+# Point data conversion plugin ![Build Status](https://github.com/ManiVaultStudio/PointDataConversionPlugin/actions/workflows/build.yml/badge.svg?branch=main)
 
 Point data conversion plugin for the [ManiVault](https://github.com/ManiVaultStudio/core) visual analytics framework.
 
