@@ -79,7 +79,7 @@ class PointDataConversionPluginFactory : public TransformationPluginFactory
 {
     Q_INTERFACES(mv::plugin::TransformationPluginFactory mv::plugin::PluginFactory)
     Q_OBJECT
-    Q_PLUGIN_METADATA(IID   "nl.BioVault.PointDataConversionPlugin"
+    Q_PLUGIN_METADATA(IID   "studio.manivault.PointDataConversionPlugin"
                       FILE  "PointDataConversionPlugin.json")
 
 public:

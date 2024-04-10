@@ -8,7 +8,7 @@
 
 #include <QDebug>
 
-Q_PLUGIN_METADATA(IID "nl.BioVault.PointDataConversionPlugin")
+Q_PLUGIN_METADATA(IID "studio.manivault.PointDataConversionPlugin")
 
 using namespace mv;
 
