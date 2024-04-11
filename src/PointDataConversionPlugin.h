@@ -1,14 +1,12 @@
 #pragma once
 
-#include <TransformationPlugin.h>
-
 #include <Dataset.h>
+#include <actions/DecimalAction.h>
+#include <TransformationPlugin.h>
 
 using namespace mv::plugin;
 using namespace mv::gui;
 using namespace mv::util;
-
-class QLabel;
 
 /**
  * Point data conversion plugin class
