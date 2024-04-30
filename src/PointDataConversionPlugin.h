@@ -1,14 +1,12 @@
 #pragma once
 
-#include <TransformationPlugin.h>
-
 #include <Dataset.h>
+#include <actions/DecimalAction.h>
+#include <TransformationPlugin.h>
 
 using namespace mv::plugin;
 using namespace mv::gui;
 using namespace mv::util;
-
-class QLabel;
 
 /**
  * Point data conversion plugin class
@@ -79,7 +77,7 @@ class PointDataConversionPluginFactory : public TransformationPluginFactory
 {
     Q_INTERFACES(mv::plugin::TransformationPluginFactory mv::plugin::PluginFactory)
     Q_OBJECT
-    Q_PLUGIN_METADATA(IID   "nl.BioVault.PointDataConversionPlugin"
+    Q_PLUGIN_METADATA(IID   "studio.manivault.PointDataConversionPlugin"
                       FILE  "PointDataConversionPlugin.json")
 
 public:
