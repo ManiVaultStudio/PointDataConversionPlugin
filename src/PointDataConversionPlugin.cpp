@@ -12,9 +12,9 @@ Q_PLUGIN_METADATA(IID "studio.manivault.PointDataConversionPlugin")
 
 using namespace mv;
 
-const QMap<PointDataConversionPlugin::Type, QString> PointDataConversionPlugin::types = QMap<PointDataConversionPlugin::Type, QString>({
-    { PointDataConversionPlugin::Type::Log2, "Log2" },
-    { PointDataConversionPlugin::Type::ArcSin, "Arcsin" }
+const QMap<PointDataConversionPlugin::Type, QString> PointDataConversionPlugin::types = QMap<Type, QString>({
+    { Type::Log2, "Log2" },
+    { Type::ArcSin, "Arcsin" }
 });
 
 PointDataConversionPlugin::PointDataConversionPlugin(const PluginFactory* factory) :
@@ -38,8 +38,6 @@ void PointDataConversionPlugin::transform()
     task.setRunning();
     task.setProgressDescription(QString("%1 conversion").arg(getTypeName(_type)));
     
-    qDebug() << "PointDataConversionPlugin:: Apply " << getTypeName(_type) << " conversion to " << points->getGuiName();
-
     points->visitData([this, &points, &task](auto pointData) {
         std::uint32_t noPointsProcessed = 0;
         
@@ -47,15 +45,12 @@ void PointDataConversionPlugin::transform()
             for (std::int32_t dimensionIndex = 0; dimensionIndex < points->getNumDimensions(); dimensionIndex++) {
                 switch (_type)
                 {
-                    case PointDataConversionPlugin::Type::Log2:
-                        point[dimensionIndex] = std::log2(point[dimensionIndex] + 1);
+                    case Type::Log2:
+                        point[dimensionIndex] = std::log2f(point[dimensionIndex] + 1.0f);
                         break;
         
-                    case PointDataConversionPlugin::Type::ArcSin:
-                        point[dimensionIndex] = std::asinh(point[dimensionIndex] / 5.0f);
-                        break;
-        
-                    default:
+                    case Type::ArcSin:
+                        point[dimensionIndex] = std::asinhf(point[dimensionIndex] / 5.0f);
                         break;
                 }
             }
@@ -186,9 +181,6 @@ WidgetAction* PointDataConversionPluginFactory::getConfigurationAction(const Poi
 
         case PointDataConversionPlugin::Type::ArcSin:
             return createGroupAction(_arcSinFactorAction);
-
-        default:
-            break;
     }
 
     return nullptr;
