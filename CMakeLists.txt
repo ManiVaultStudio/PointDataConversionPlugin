@@ -81,7 +81,7 @@ add_custom_command(TARGET ${PROJECT} POST_BUILD
 
 set_target_properties(${PROJECT}
     PROPERTIES
-    FOLDER AnalysisPlugins
+    FOLDER TransformationPlugins
 )
 
 # -----------------------------------------------------------------------------
