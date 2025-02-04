@@ -4,16 +4,10 @@ on:
   push:
   pull_request:
   workflow_dispatch:
-    inputs:
-      forceMacBuild:
-        description: 'If set true override the ENABLE_MACOS_BUILD to force a build'
-        type: boolean
-        default: false
 
 env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
   BUILD_TYPE: Release
-  MACENABLED: ${{ inputs.forceMacBuild }}
 
 # for matrix check https://docs.github.com/en/actions/reference/specifications-for-github-hosted-runners
 jobs:
@@ -41,14 +35,14 @@ jobs:
     steps:
       - name: Checkout the source
         if: github.event_name != 'pull_request'
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           submodules: recursive
           fetch-depth: 0
 
       - name: Checkout the source - pull request
         if: github.event_name == 'pull_request'
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           submodules: recursive
           fetch-depth: 0
@@ -60,19 +54,12 @@ jobs:
           sudo xcode-select -switch /Applications/Xcode_${{matrix.build-xcode-version}}.app
 
       - name: Setup python version
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      # windows-2016 need the SSHAgentFeature added
       - name: Start ssh key agent
-        if: matrix.os == 'windows-2016'
-        run: |
-          choco install --no-progress -my openssh --params '"/SSHAgentFeature"'
-          refreshenv
-
-      - name: Start ssh key agent
-        uses: webfactory/ssh-agent@v0.5.0
+        uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.RULESSUPPORT_DEPLOY_KEY }}
 
@@ -110,7 +97,7 @@ jobs:
           conan-cxx: g++-${{matrix.build-cversion}}
     
       - name: Mac build
-        if: startsWith(matrix.os, 'macos') &&  (env.MACENABLED == 'true' || vars.ENABLE_MACOS_BUILD == 'True')
+        if: startsWith(matrix.os, 'macos')
         uses: ManiVaultStudio/github-actions/conan_linuxmac_build@main
         with:
           conan-compiler: ${{matrix.build-compiler}}
