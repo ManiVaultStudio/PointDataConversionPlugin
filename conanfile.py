@@ -11,7 +11,7 @@ from rules_support import PluginBranchInfo
 class PointDataConversionPluginConan(ConanFile):
     """Class to package the PointDataConversionPlugin  using conan
 
-    Packages both RELEASE and DEBUG.
+    Packages both RELEASE and RELWITHDEBINFO.
     Uses rules_support (github.com/ManiVaultStudio/rulessupport) to derive
     versioninfo based on the branch naming convention
     as described in https://github.com/ManiVaultStudio/core/wiki/Branch-naming-rules
@@ -90,13 +90,8 @@ class PointDataConversionPluginConan(ConanFile):
         qt_path = pathlib.Path(self.deps_cpp_info["qt"].rootpath)
         qt_cfg = list(qt_path.glob("**/Qt6Config.cmake"))[0]
         qt_dir = qt_cfg.parents[0].as_posix()
-        qt_root = qt_cfg.parents[3].as_posix()
 
-        # for Qt >= 6.4.2
-        #tc.variables["Qt6_DIR"] = qt_dir
-
-        # for Qt < 6.4.2
-        tc.variables["Qt6_ROOT"] = qt_root
+        tc.variables["Qt6_DIR"] = qt_dir
 
         # Use the ManiVault .cmake file to find ManiVault with find_package
         mv_core_root = self.deps_cpp_info["hdps-core"].rootpath
@@ -119,12 +114,12 @@ class PointDataConversionPluginConan(ConanFile):
         print("Build OS is: ", self.settings.os)
 
         cmake = self._configure_cmake()
-        cmake.build(build_type="Debug")
+        cmake.build(build_type="RelWithDebInfo")
         cmake.build(build_type="Release")
 
     def package(self):
         package_dir = pathlib.Path(self.build_folder, "package")
-        debug_dir = package_dir / "Debug"
+        relWithDebInfo_dir = package_dir / "RelWithDebInfo"
         release_dir = package_dir / "Release"
         print("Packaging install dir: ", package_dir)
         subprocess.run(
@@ -133,9 +128,9 @@ class PointDataConversionPluginConan(ConanFile):
                 "--install",
                 self.build_folder,
                 "--config",
-                "Debug",
+                "RelWithDebInfo",
                 "--prefix",
-                debug_dir,
+                relWithDebInfo_dir,
             ]
         )
         subprocess.run(
@@ -150,11 +145,11 @@ class PointDataConversionPluginConan(ConanFile):
             ]
         )
         self.copy(pattern="*", src=package_dir)
-        
+
     def package_info(self):
-        self.cpp_info.debug.libdirs = ["Debug/lib"]
-        self.cpp_info.debug.bindirs = ["Debug/Plugins", "Debug"]
-        self.cpp_info.debug.includedirs = ["Debug/include", "Debug"]
+        self.cpp_info.relwithdebinfo.libdirs = ["RelWithDebInfo/lib"]
+        self.cpp_info.relwithdebinfo.bindirs = ["RelWithDebInfo/Plugins", "RelWithDebInfo"]
+        self.cpp_info.relwithdebinfo.includedirs = ["RelWithDebInfo/include", "RelWithDebInfo"]
         self.cpp_info.release.libdirs = ["Release/lib"]
         self.cpp_info.release.bindirs = ["Release/Plugins", "Release"]
         self.cpp_info.release.includedirs = ["Release/include", "Release"]
