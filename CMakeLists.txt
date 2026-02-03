@@ -34,15 +34,18 @@ find_package(ManiVault COMPONENTS Core PointData CONFIG QUIET)
 set(SOURCES
     src/PointDataConversionPlugin.h
     src/PointDataConversionPlugin.cpp
-    src/PointDataConversionPlugin.json
 )
 
-source_group(Plugin FILES ${SOURCES})
+set(AUX 
+    PluginInfo.json
+)
+
+source_group(Plugin FILES ${SOURCES} ${AUX})
 
 # -----------------------------------------------------------------------------
 # CMake Target
 # -----------------------------------------------------------------------------
-add_library(${PROJECT} SHARED ${SOURCES})
+add_library(${PROJECT} SHARED ${SOURCES} ${AUX})
 
 # -----------------------------------------------------------------------------
 # Target include directories
@@ -79,10 +82,7 @@ add_custom_command(TARGET ${PROJECT} POST_BUILD
     --verbose
 )
 
-set_target_properties(${PROJECT}
-    PROPERTIES
-    FOLDER TransformationPlugins
-)
+mv_handle_plugin_config(${PROJECT})
 
 # -----------------------------------------------------------------------------
 # Misc
