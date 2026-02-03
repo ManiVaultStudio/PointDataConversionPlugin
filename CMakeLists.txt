@@ -5,7 +5,10 @@ cmake_minimum_required(VERSION 3.22)
 # -----------------------------------------------------------------------------
 set(PROJECT "PointDataConversionPlugin")
 
-PROJECT(${PROJECT})
+PROJECT(${PROJECT}
+        DESCRIPTION "point data conversion plugin for ManiVault"
+        LANGUAGES CXX
+)
 
 # -----------------------------------------------------------------------------
 # CMake Options
