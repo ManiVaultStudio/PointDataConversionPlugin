@@ -39,10 +39,9 @@ void PointDataConversionPlugin::transform()
     task.setProgressDescription(QString("%1 conversion").arg(getConversionName(_conversion)));
     
     points->visitData([this, &points, &task](auto pointData) {
-        std::uint32_t noPointsProcessed = 0;
-        
+        std::uint64_t noPointsProcessed = 0;
         for (auto point : pointData) {
-            for (std::int32_t dimensionIndex = 0; dimensionIndex < points->getNumDimensions(); dimensionIndex++) {
+            for (std::uint64_t dimensionIndex = 0; dimensionIndex < points->getNumDimensions(); dimensionIndex++) {
                 switch (_conversion)
                 {
                     case Conversion::Log2:
