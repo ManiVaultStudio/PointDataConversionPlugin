@@ -20,7 +20,8 @@ const QMap<PointDataConversionPlugin::Conversion, QString> PointDataConversionPl
 
 PointDataConversionPlugin::PointDataConversionPlugin(const mv::plugin::PluginFactory* factory) :
     TransformationPlugin(factory),
-    _conversion(Conversion::ArcSin)
+    _conversion(Conversion::ArcSin),
+    _cofactors({5.f})
 {
 }
 
@@ -41,28 +42,33 @@ void PointDataConversionPlugin::transform()
     
     points->visitData([this, &points, &task](auto pointData) {
         std::uint64_t noPointsProcessed = 0;
-        for (auto point : pointData) {
+    
+        float cofactor = _cofactors[0];
+
+        // TODO: parallelize the outer loop
+        for (std::uint64_t pointIndex = 0; pointIndex < points->getNumPoints(); pointIndex++) {
+
             for (std::uint64_t dimensionIndex = 0; dimensionIndex < points->getNumDimensions(); dimensionIndex++) {
                 switch (_conversion)
                 {
-                    case Conversion::Log2:
-                        point[dimensionIndex] = std::log2f(point[dimensionIndex] + 1.0f);
-                        break;
-        
-                    case Conversion::ArcSin:
-                        point[dimensionIndex] = std::asinhf(point[dimensionIndex] / 5.0f);
-                        break;
+                case Conversion::Log2:
+                    pointData[pointIndex][dimensionIndex] = std::log2f(pointData[pointIndex][dimensionIndex] + 1.0f);
+                    break;
+
+                case Conversion::ArcSin:
+                    pointData[pointIndex][dimensionIndex] = std::asinhf(pointData[pointIndex][dimensionIndex] / cofactor);
+                    break;
                 }
             }
-        
-            ++noPointsProcessed;
-        
-            if (noPointsProcessed % 1000 == 0) {
+
+            // TODO: guard this when parallelizing
+            if (++noPointsProcessed % 1000 == 0) {
                 task.setProgress(static_cast<float>(noPointsProcessed) / static_cast<float>(points->getNumPoints()));
-                    
+
                 QApplication::processEvents();
             }
         }
+
     });
         
     task.setProgress(1.0f);
@@ -99,7 +105,7 @@ PointDataConversionPlugin* PointDataConversionPluginFactory::produce()
     return new PointDataConversionPlugin(this);
 }
 
-
+// TODO: add gui to optionally set per-channel cofactor
 PluginTriggerActions PointDataConversionPluginFactory::getPluginTriggerActions(const mv::Datasets& datasets) const
 {
     PluginTriggerActions pluginTriggerActions;
