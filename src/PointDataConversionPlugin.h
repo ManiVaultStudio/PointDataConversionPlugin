@@ -10,16 +10,13 @@
 
 #include <vector>
 
-using namespace mv::plugin;
-using namespace mv::gui;
-using namespace mv::util;
 
 /**
  * Point data conversion plugin class
  *
  * @author Thomas Kroes
  */
-class PointDataConversionPlugin : public TransformationPlugin
+class PointDataConversionPlugin : public mv::plugin::TransformationPlugin
 {
     Q_OBJECT
 
@@ -39,7 +36,7 @@ public:
      * Constructor
      * @param factory Pointer to the plugin factory
      */
-    PointDataConversionPlugin(const PluginFactory* factory);
+    PointDataConversionPlugin(const mv::plugin::PluginFactory* factory);
 
     /** Destructor */
     ~PointDataConversionPlugin() override = default;
@@ -79,7 +76,7 @@ private:
  *
  * @author Thomas Kroes
  */
-class PointDataConversionPluginFactory : public TransformationPluginFactory
+class PointDataConversionPluginFactory : public mv::plugin::TransformationPluginFactory
 {
     Q_INTERFACES(mv::plugin::TransformationPluginFactory mv::plugin::PluginFactory)
     Q_OBJECT
@@ -102,14 +99,14 @@ public:
      * @param datasets Vector of input datasets
      * @return Vector of plugin trigger actions
      */
-    PluginTriggerActions getPluginTriggerActions(const mv::Datasets& datasets) const override;
+    mv::gui::PluginTriggerActions getPluginTriggerActions(const mv::Datasets& datasets) const override;
 
     /**
      * Get plugin trigger actions given \p dataTypes
      * @param dataTypes Vector of input data types
      * @return Vector of plugin trigger actions
      */
-    PluginTriggerActions getPluginTriggerActions(const mv::DataTypes& dataTypes) const override;
+    mv::gui::PluginTriggerActions getPluginTriggerActions(const mv::DataTypes& dataTypes) const override;
 
     /**
      * Get configuration action for \p type
@@ -118,5 +115,5 @@ public:
     WidgetAction* getConfigurationAction(const PointDataConversionPlugin::Conversion& type);
 
 private:
-    DecimalAction   _arcSinFactorAction;    /** Factor for arcsin(value/factor) conversion */
+    mv::gui::DecimalAction   _arcSinFactorAction;    /** Factor for arcsin(value/factor) conversion */
 };

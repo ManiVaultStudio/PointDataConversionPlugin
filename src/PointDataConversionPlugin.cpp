@@ -11,13 +11,14 @@
 Q_PLUGIN_METADATA(IID "studio.manivault.PointDataConversionPlugin")
 
 using namespace mv;
+using namespace mv::gui;
 
 const QMap<PointDataConversionPlugin::Conversion, QString> PointDataConversionPlugin::CONVERSIONS = QMap<Conversion, QString>({
     { Conversion::Log2, "Log2" },
     { Conversion::ArcSin, "Arcsin" }
 });
 
-PointDataConversionPlugin::PointDataConversionPlugin(const PluginFactory* factory) :
+PointDataConversionPlugin::PointDataConversionPlugin(const mv::plugin::PluginFactory* factory) :
     TransformationPlugin(factory),
     _conversion(Conversion::ArcSin)
 {
@@ -103,8 +104,6 @@ PluginTriggerActions PointDataConversionPluginFactory::getPluginTriggerActions(c
 {
     PluginTriggerActions pluginTriggerActions;
 
-    const auto numberOfDatasets = datasets.count();
-
     if (datasets.count() >= 1 && PluginFactory::areAllDatasetsOfTheSameType(datasets, PointType)) {
         const auto addPluginTriggerAction = [this, &pluginTriggerActions, datasets](const PointDataConversionPlugin::Conversion& type) -> void {
             const auto typeName = PointDataConversionPlugin::getConversionName(type);
@@ -128,7 +127,6 @@ PluginTriggerActions PointDataConversionPluginFactory::getPluginTriggerActions(c
 
     return pluginTriggerActions;
 }
-
 
 // This is used in the image viewer
 PluginTriggerActions PointDataConversionPluginFactory::getPluginTriggerActions(const mv::DataTypes& dataTypes) const
