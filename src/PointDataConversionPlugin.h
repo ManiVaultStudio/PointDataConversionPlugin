@@ -1,8 +1,14 @@
 #pragma once
 
-#include <Dataset.h>
 #include <actions/DecimalAction.h>
+
+#include <Dataset.h>
 #include <TransformationPlugin.h>
+
+#include <QMap>
+#include <QString>
+
+#include <vector>
 
 using namespace mv::plugin;
 using namespace mv::gui;
@@ -20,12 +26,12 @@ class PointDataConversionPlugin : public TransformationPlugin
 public:
 
     /** Point data conversion type */
-    enum class Type {
+    enum class Conversion {
         Log2,       /** log2(value+1) */
         ArcSin      /** asinh(value/factor) */
     };
 
-    static const QMap<Type, QString> types;
+    static const QMap<Conversion, QString> CONVERSIONS;
 
 public:
 
@@ -45,27 +51,27 @@ public:
     void transform() override;
 
     /**
-    /**
      * Get point data conversion type
      * @return Point data conversion type
      */
-    Type getType() const;
+    Conversion getConversion() const;
 
     /**
      * Set point data conversion type
-     * @param type Point data conversion type
+     * @param conversion Point data conversion type
      */
-    void setType(const Type& type);
+    void setConversion(const Conversion& conversion);
 
     /**
      * Get string representation of type enum
-     * @param type Point data conversion type
-     * @return Type name
+     * @param conversion Point data conversion type
+     * @return conversion name
      */
-    static QString getTypeName(const Type& type);
+    static QString getConversionName(const Conversion& conversion);
 
 private:
-    Type    _type;      /** Data conversion type */
+    Conversion          _conversion;      /** Data conversion type */
+    std::vector<float>  _cofactors;
 };
 
 /**
@@ -100,7 +106,7 @@ public:
 
     /**
      * Get plugin trigger actions given \p dataTypes
-     * @param datasetTypes Vector of input data types
+     * @param dataTypes Vector of input data types
      * @return Vector of plugin trigger actions
      */
     PluginTriggerActions getPluginTriggerActions(const mv::DataTypes& dataTypes) const override;
@@ -109,7 +115,7 @@ public:
      * Get configuration action for \p type
      * @return Pointer to configuration action (may be null)
      */
-    WidgetAction* getConfigurationAction(const PointDataConversionPlugin::Type& type);
+    WidgetAction* getConfigurationAction(const PointDataConversionPlugin::Conversion& type);
 
 private:
     DecimalAction   _arcSinFactorAction;    /** Factor for arcsin(value/factor) conversion */

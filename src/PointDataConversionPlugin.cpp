@@ -12,14 +12,14 @@ Q_PLUGIN_METADATA(IID "studio.manivault.PointDataConversionPlugin")
 
 using namespace mv;
 
-const QMap<PointDataConversionPlugin::Type, QString> PointDataConversionPlugin::types = QMap<Type, QString>({
-    { Type::Log2, "Log2" },
-    { Type::ArcSin, "Arcsin" }
+const QMap<PointDataConversionPlugin::Conversion, QString> PointDataConversionPlugin::CONVERSIONS = QMap<Conversion, QString>({
+    { Conversion::Log2, "Log2" },
+    { Conversion::ArcSin, "Arcsin" }
 });
 
 PointDataConversionPlugin::PointDataConversionPlugin(const PluginFactory* factory) :
     TransformationPlugin(factory),
-    _type(Type::ArcSin)
+    _conversion(Conversion::ArcSin)
 {
 }
 
@@ -36,20 +36,20 @@ void PointDataConversionPlugin::transform()
         
     task.setName("Converting");
     task.setRunning();
-    task.setProgressDescription(QString("%1 conversion").arg(getTypeName(_type)));
+    task.setProgressDescription(QString("%1 conversion").arg(getConversionName(_conversion)));
     
     points->visitData([this, &points, &task](auto pointData) {
         std::uint32_t noPointsProcessed = 0;
         
         for (auto point : pointData) {
             for (std::int32_t dimensionIndex = 0; dimensionIndex < points->getNumDimensions(); dimensionIndex++) {
-                switch (_type)
+                switch (_conversion)
                 {
-                    case Type::Log2:
+                    case Conversion::Log2:
                         point[dimensionIndex] = std::log2f(point[dimensionIndex] + 1.0f);
                         break;
         
-                    case Type::ArcSin:
+                    case Conversion::ArcSin:
                         point[dimensionIndex] = std::asinhf(point[dimensionIndex] / 5.0f);
                         break;
                 }
@@ -71,22 +71,22 @@ void PointDataConversionPlugin::transform()
     events().notifyDatasetDataChanged(points);
 }
 
-PointDataConversionPlugin::Type PointDataConversionPlugin::getType() const
+PointDataConversionPlugin::Conversion PointDataConversionPlugin::getConversion() const
 {
-    return _type;
+    return _conversion;
 }
 
-void PointDataConversionPlugin::setType(const Type& type)
+void PointDataConversionPlugin::setConversion(const Conversion& conversion)
 {
-    if (type == _type)
+    if (conversion == _conversion)
         return;
 
-    _type = type;
+    _conversion = conversion;
 }
 
-QString PointDataConversionPlugin::getTypeName(const Type& type)
+QString PointDataConversionPlugin::getConversionName(const Conversion& conversion)
 {
-    return types[type];
+    return CONVERSIONS[conversion];
 }
 
 PointDataConversionPluginFactory::PointDataConversionPluginFactory() :
@@ -99,52 +99,53 @@ PointDataConversionPlugin* PointDataConversionPluginFactory::produce()
     return new PointDataConversionPlugin(this);
 }
 
+
 PluginTriggerActions PointDataConversionPluginFactory::getPluginTriggerActions(const mv::Datasets& datasets) const
 {
     PluginTriggerActions pluginTriggerActions;
 
     const auto numberOfDatasets = datasets.count();
 
-    if (PluginFactory::areAllDatasetsOfTheSameType(datasets, PointType)) {
-        if (numberOfDatasets >= 1 && datasets.first()->getDataType() == PointType) {
-            const auto addPluginTriggerAction = [this, &pluginTriggerActions, datasets](const PointDataConversionPlugin::Type& type) -> void {
-                const auto typeName = PointDataConversionPlugin::getTypeName(type);
+    if (datasets.count() >= 1 && PluginFactory::areAllDatasetsOfTheSameType(datasets, PointType)) {
+        const auto addPluginTriggerAction = [this, &pluginTriggerActions, datasets](const PointDataConversionPlugin::Conversion& type) -> void {
+            const auto typeName = PointDataConversionPlugin::getConversionName(type);
 
-                auto pluginTriggerAction = new PluginTriggerAction(const_cast<PointDataConversionPluginFactory*>(this), this, QString("Conversion/%1").arg(typeName), QString("Perform %1 data conversion").arg(typeName), icon(), [this, datasets, type](PluginTriggerAction& pluginTriggerAction) -> void {
-                    for (const auto& dataset : datasets) {
-                        auto pluginInstance = dynamic_cast<PointDataConversionPlugin*>(plugins().requestPlugin(getKind()));
+            auto pluginTriggerAction = new PluginTriggerAction(const_cast<PointDataConversionPluginFactory*>(this), this, QString("Conversion/%1").arg(typeName), QString("Perform %1 data conversion").arg(typeName), icon(), [this, datasets, type](PluginTriggerAction& pluginTriggerAction) -> void {
+                for (const auto& dataset : datasets) {
+                    auto pluginInstance = dynamic_cast<PointDataConversionPlugin*>(plugins().requestPlugin(getKind()));
 
-                        pluginInstance->setInputDataset(dataset);
-                        pluginInstance->setType(type);
-                        pluginInstance->transform();
-                    }
+                    pluginInstance->setInputDataset(dataset);
+                    pluginInstance->setConversion(type);
+                    pluginInstance->transform();
+                }
                 });
 
-                pluginTriggerActions << pluginTriggerAction;
+            pluginTriggerActions << pluginTriggerAction;
             };
 
-            addPluginTriggerAction(PointDataConversionPlugin::Type::Log2);
-            addPluginTriggerAction(PointDataConversionPlugin::Type::ArcSin);
-        }
+        addPluginTriggerAction(PointDataConversionPlugin::Conversion::Log2);
+        addPluginTriggerAction(PointDataConversionPlugin::Conversion::ArcSin);
     }
 
     return pluginTriggerActions;
 }
 
+
+// This is used in the image viewer
 PluginTriggerActions PointDataConversionPluginFactory::getPluginTriggerActions(const mv::DataTypes& dataTypes) const
 {
     PluginTriggerActions pluginTriggerActions;
 
     if (dataTypes.count(PointType) == dataTypes.count()) {
-        const auto addPluginTriggerAction = [this, &pluginTriggerActions](const PointDataConversionPlugin::Type& type) -> void {
-            const auto typeName = PointDataConversionPlugin::getTypeName(type);
+        const auto addPluginTriggerAction = [this, &pluginTriggerActions](const PointDataConversionPlugin::Conversion& type) -> void {
+            const auto typeName = PointDataConversionPlugin::getConversionName(type);
 
             auto pluginTriggerAction = new PluginTriggerAction(const_cast<PointDataConversionPluginFactory*>(this), this, QString("Conversion/%1").arg(typeName), QString("Perform %1 data conversion").arg(typeName), icon(), [this, type](PluginTriggerAction& pluginTriggerAction) -> void {
                 for (const auto& dataset : pluginTriggerAction.getDatasets()) {
                     auto pluginInstance = dynamic_cast<PointDataConversionPlugin*>(plugins().requestPlugin(getKind()));
 
                     pluginInstance->setInputDataset(dataset);
-                    pluginInstance->setType(type);
+                    pluginInstance->setConversion(type);
                     pluginInstance->transform();
                 }
             });
@@ -154,14 +155,15 @@ PluginTriggerActions PointDataConversionPluginFactory::getPluginTriggerActions(c
             pluginTriggerActions << pluginTriggerAction;
         };
 
-        addPluginTriggerAction(PointDataConversionPlugin::Type::Log2);
-        addPluginTriggerAction(PointDataConversionPlugin::Type::ArcSin);
+        addPluginTriggerAction(PointDataConversionPlugin::Conversion::Log2);
+        addPluginTriggerAction(PointDataConversionPlugin::Conversion::ArcSin);
     }
 
     return pluginTriggerActions;
 }
 
-WidgetAction* PointDataConversionPluginFactory::getConfigurationAction(const PointDataConversionPlugin::Type& type)
+// TODO: actually use the cofactor
+WidgetAction* PointDataConversionPluginFactory::getConfigurationAction(const PointDataConversionPlugin::Conversion& type)
 {
     const auto createGroupAction = [this](WidgetAction& widgetAction) -> GroupAction* {
         auto groupAction = new GroupAction(this, "PointDataConversionGroupAction");
@@ -176,10 +178,10 @@ WidgetAction* PointDataConversionPluginFactory::getConfigurationAction(const Poi
 
     switch (type)
     {
-        case PointDataConversionPlugin::Type::Log2:
+        case PointDataConversionPlugin::Conversion::Log2:
             return nullptr;
 
-        case PointDataConversionPlugin::Type::ArcSin:
+        case PointDataConversionPlugin::Conversion::ArcSin:
             return createGroupAction(_arcSinFactorAction);
     }
 
