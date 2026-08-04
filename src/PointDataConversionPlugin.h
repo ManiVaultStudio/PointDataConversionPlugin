@@ -42,7 +42,7 @@ public:
     ~PointDataConversionPlugin() override = default;
     
     /** Initialization is called when the plugin is first instantiated. */
-    void init() override {};
+    void init() override {}
 
     /** Performs the data transformation */
     void transform() override;
@@ -116,6 +116,9 @@ public:
      * @return Pointer to configuration action (may be null)
      */
     WidgetAction* getConfigurationAction(const PointDataConversionPlugin::Conversion& type);
+
+private:
+    std::vector<float> getArcSinCoFactor() const;
 
 private:
     mv::gui::DecimalAction   _arcSinFactorAction;    /** Factor for arcsin(value/factor) conversion */

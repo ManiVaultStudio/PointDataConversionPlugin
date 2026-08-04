@@ -111,6 +111,11 @@ PointDataConversionPlugin* PointDataConversionPluginFactory::produce()
     return new PointDataConversionPlugin(this);
 }
 
+std::vector<float> PointDataConversionPluginFactory::getArcSinCoFactor() const
+{
+    return { _arcSinFactorAction.getValue() };
+}
+
 // TODO: add gui to optionally set per-channel cofactor
 PluginTriggerActions PointDataConversionPluginFactory::getPluginTriggerActions(const mv::Datasets& datasets) const
 {
@@ -155,7 +160,7 @@ PluginTriggerActions PointDataConversionPluginFactory::getPluginTriggerActions(c
 
                     pluginInstance->setInputDataset(dataset);
                     pluginInstance->setConversion(type);
-                    pluginInstance->setCofactor(std::vector<float>{ _arcSinFactorAction.getValue() });
+                    pluginInstance->setCofactor(getArcSinCoFactor());
 
                     pluginInstance->transform();
                 }
