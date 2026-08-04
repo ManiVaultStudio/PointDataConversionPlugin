@@ -2,6 +2,7 @@
 
 #include <actions/WidgetAction.h>
 
+#include <QListWidget>
 #include <QString>
 #include <QStringList>
 #include <QWidget>
@@ -45,6 +46,8 @@ namespace mv::gui {
         [[nodiscard]] float getValueForOption(const QString& option) const;
         [[nodiscard]] std::vector<float> getValues() const;
 
+        void setAllSlidersEnabled(bool enabled);
+
     signals:
         void optionValueChanged(const QString& option, float value);
 
@@ -52,8 +55,8 @@ namespace mv::gui {
         QWidget* getWidget(QWidget* parent, const std::int32_t& widgetFlags) override;
 
     private:
-
         QStringList _options = {};
         std::unordered_map<QString, OptionData> _optionData = {};
+        QListWidget* _sliderList = nullptr;
     };
 }

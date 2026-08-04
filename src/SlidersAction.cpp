@@ -4,7 +4,6 @@
 
 #include <QHBoxLayout>
 #include <QLabel>
-#include <QListWidgetItem>
 
 using namespace mv::gui;
 
@@ -78,20 +77,36 @@ std::vector<float> SlidersAction::getValues() const
     return values;
 }
 
+void SlidersAction::setAllSlidersEnabled(bool enabled)
+{
+    setEnabled(enabled);
+
+    if (!_sliderList)
+        return;
+
+    for (int i = 0; i < _sliderList->count(); ++i) {
+        QListWidgetItem* item = _sliderList->item(i);
+        if (QWidget* row = _sliderList->itemWidget(item)) {
+            row->setEnabled(enabled);
+        }
+    }
+
+}
+
 QWidget* SlidersAction::getWidget(QWidget* parent, const std::int32_t& widgetFlags) 
 {
     auto* container = new QWidget(parent);
     auto* layout = new QVBoxLayout(container);
     layout->setContentsMargins(4, 4, 4, 4);
 
-    auto* list = new QListWidget(container);
-    list->setSelectionMode(QAbstractItemView::NoSelection);
-    layout->addWidget(list);
+    _sliderList = new QListWidget(container);
+    _sliderList->setSelectionMode(QAbstractItemView::NoSelection);
+    layout->addWidget(_sliderList);
 
     for (const QString& opt : _options) {
-        auto* item = new QListWidgetItem(list);
+        auto* item = new QListWidgetItem(_sliderList);
 
-        QWidget* row = new QWidget(list);
+        QWidget* row = new QWidget(_sliderList);
         QHBoxLayout* rowLayout = new QHBoxLayout(row);
         rowLayout->setContentsMargins(2, 2, 2, 2);
 
@@ -101,8 +116,8 @@ QWidget* SlidersAction::getWidget(QWidget* parent, const std::int32_t& widgetFla
         rowLayout->addWidget(slider->createLabelWidget(container));
         rowLayout->addWidget(slider->createWidget(container));
 
-        list->addItem(item);
-        list->setItemWidget(item, row);
+        _sliderList->addItem(item);
+        _sliderList->setItemWidget(item, row);
         item->setSizeHint(row->sizeHint());
 
         connect(slider, &DecimalAction::valueChanged, this, [this, opt](float value) {
