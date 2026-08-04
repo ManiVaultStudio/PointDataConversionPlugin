@@ -155,6 +155,8 @@ PluginTriggerActions PointDataConversionPluginFactory::getPluginTriggerActions(c
 
                     pluginInstance->setInputDataset(dataset);
                     pluginInstance->setConversion(type);
+                    pluginInstance->setCofactor(std::vector<float>{ _arcSinFactorAction.getValue() });
+
                     pluginInstance->transform();
                 }
             });
@@ -171,7 +173,6 @@ PluginTriggerActions PointDataConversionPluginFactory::getPluginTriggerActions(c
     return pluginTriggerActions;
 }
 
-// TODO: actually use the cofactor
 WidgetAction* PointDataConversionPluginFactory::getConfigurationAction(const PointDataConversionPlugin::Conversion& type)
 {
     const auto createGroupAction = [this](WidgetAction& widgetAction) -> GroupAction* {
