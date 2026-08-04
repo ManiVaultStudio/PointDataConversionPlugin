@@ -20,6 +20,7 @@ namespace mv::gui {
         /** Describes the widget flags */
         enum WidgetFlag {
             Default = 0x00001,
+            DisableOnFirstOpen = 0x00002,
         };
 
     public:

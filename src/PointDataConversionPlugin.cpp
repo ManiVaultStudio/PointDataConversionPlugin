@@ -214,7 +214,7 @@ WidgetAction* PointDataConversionPluginFactory::getConfigurationAction(const Poi
         groupAction->setLabelSizingType(GroupAction::LabelSizingType::Auto);
         groupAction->addAction(&_sameFactorAction);
         groupAction->addAction(&_arcSinFactorAction);
-        groupAction->addAction(&_arcSinFactorsAction);  // TODO: not correctly enabled on first open
+        groupAction->addAction(&_arcSinFactorsAction);
 
         return groupAction;
     };

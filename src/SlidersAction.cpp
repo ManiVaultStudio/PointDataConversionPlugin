@@ -11,7 +11,7 @@ SlidersAction::SlidersAction(QObject* parent, const QString& title) :
     WidgetAction(parent, title)
 {
     setText(title);
-    setDefaultWidgetFlags(SlidersAction::Default);
+    setDefaultWidgetFlags(SlidersAction::DisableOnFirstOpen);
 }
 
 void SlidersAction::initialize(const QStringList& options) {
@@ -99,6 +99,8 @@ QWidget* SlidersAction::getWidget(QWidget* parent, const std::int32_t& widgetFla
     auto* layout = new QVBoxLayout(container);
     layout->setContentsMargins(4, 4, 4, 4);
 
+    const bool disableAll = _sliderList == nullptr && widgetFlags == WidgetFlag::DisableOnFirstOpen;
+
     _sliderList = new QListWidget(container);
     _sliderList->setSelectionMode(QAbstractItemView::NoSelection);
     layout->addWidget(_sliderList);
@@ -124,6 +126,9 @@ QWidget* SlidersAction::getWidget(QWidget* parent, const std::int32_t& widgetFla
             setValueForOption(opt, value);
             });
     }
+
+    if (disableAll)
+        setAllSlidersEnabled(false);
 
     return container;
 }
