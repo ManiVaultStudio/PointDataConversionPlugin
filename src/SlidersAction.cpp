@@ -35,7 +35,8 @@ void SlidersAction::setOptions(const QStringList& options) {
     }
 }
 
-void SlidersAction::setRangeForOption(const QString& option, float minimum, float maximum) {
+void SlidersAction::setRangeForOption(const QString& option, float minimum, float maximum) 
+{
     if (!_optionData.contains(option)) return;
     auto& d = _optionData[option];
     d.min = minimum;
@@ -43,28 +44,26 @@ void SlidersAction::setRangeForOption(const QString& option, float minimum, floa
     d.value = std::clamp(d.value, d.min, d.max);
 }
 
-void SlidersAction::setValueForOption(const QString& option, float value) {
+void SlidersAction::setValueForOption(const QString& option, float value) 
+{
     if (!_optionData.contains(option)) return;
     auto& d = _optionData[option];
     value = std::clamp(value, d.min, d.max);
-    if (d.value == value) return;
+    if (std::abs(d.value - value) < 0.0001f) return;
     d.value = value;
     emit optionValueChanged(option, value);
 }
 
-void SlidersAction::setDataForOption(const QString& option, float value, float minimum, float maximum) {
-    if (!_optionData.contains(option)) return;
-    auto& d = _optionData[option];
-    d.min = minimum; 
-    d.max = maximum;
-    value = std::clamp(value, d.min, d.max);
-    if (d.value == value) return;
-    d.value = value;
-    emit optionValueChanged(option, value);
+void SlidersAction::setDataForOption(const QString& option, float value, float minimum, float maximum) 
+{
+    setRangeForOption(option, minimum, maximum);
+    setValueForOption(option, value);
 }
 
-float SlidersAction::getValueForOption(const QString& option) const {
-    if (!_optionData.contains(option)) return 0.0f;
+float SlidersAction::getValueForOption(const QString& option) const 
+{
+    if (!_optionData.contains(option))
+        return 0.0f;
     return _optionData.at(option).value;
 }
 
@@ -79,8 +78,8 @@ std::vector<float> SlidersAction::getValues() const
     return values;
 }
 
-QWidget* SlidersAction::getWidget(QWidget* parent, const std::int32_t& widgetFlags) {
-    // Create a popup list widget with rows; each row contains a checkbox, label, slider, spinbox.
+QWidget* SlidersAction::getWidget(QWidget* parent, const std::int32_t& widgetFlags) 
+{
     auto* container = new QWidget(parent);
     auto* layout = new QVBoxLayout(container);
     layout->setContentsMargins(4, 4, 4, 4);
@@ -98,13 +97,17 @@ QWidget* SlidersAction::getWidget(QWidget* parent, const std::int32_t& widgetFla
 
         const OptionData& d = _optionData.at(opt);
 
-        DecimalAction* slider = new DecimalAction(this, opt, d.min, d.max, d.value, 2);
+        DecimalAction* slider = new DecimalAction(this, opt, d.min, d.max, d.value, OptionData::DEFAULT_DECIMALS);
         rowLayout->addWidget(slider->createLabelWidget(container));
         rowLayout->addWidget(slider->createWidget(container));
 
         list->addItem(item);
         list->setItemWidget(item, row);
         item->setSizeHint(row->sizeHint());
+
+        connect(slider, &DecimalAction::valueChanged, this, [this, opt](float value) {
+            setValueForOption(opt, value);
+            });
     }
 
     return container;

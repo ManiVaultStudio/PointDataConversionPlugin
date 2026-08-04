@@ -14,13 +14,27 @@ namespace mv::gui {
 
     class SlidersAction : public WidgetAction {
         Q_OBJECT
-    public:
-        explicit SlidersAction(QObject* parent, const QString& title);
 
+    public:
         /** Describes the widget flags */
         enum WidgetFlag {
             Default = 0x00001,
         };
+
+    public:
+        struct OptionData {
+            static constexpr float DEFAULT_MIN = 1.0f;
+            static constexpr float DEFAULT_MAX = 100.0f;
+            static constexpr float DEFAULT_VALUE = 5.0f;
+            static constexpr std::int32_t DEFAULT_DECIMALS = 2;
+
+            float min = DEFAULT_MIN;
+            float max = DEFAULT_MAX;
+            float value = DEFAULT_VALUE;
+        };
+
+    public:
+        explicit SlidersAction(QObject* parent, const QString& title);
 
         void initialize(const QStringList& options = QStringList());
         void setOptions(const QStringList& options);
@@ -38,11 +52,6 @@ namespace mv::gui {
         QWidget* getWidget(QWidget* parent, const std::int32_t& widgetFlags) override;
 
     private:
-        struct OptionData {
-            float min = 0.0f;
-            float max = 1.0f;
-            float value = 0.5f;
-        };
 
         QStringList _options = {};
         std::unordered_map<QString, OptionData> _optionData = {};
