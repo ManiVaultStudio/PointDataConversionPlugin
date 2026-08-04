@@ -47,6 +47,12 @@ public:
     /** Performs the data transformation */
     void transform() override;
 
+    /** Set the sinh cofactors */
+    void setCofactor(const std::vector<float>& cofactors) { _cofactors = cofactors; }
+
+    /** Set the sinh cofactors */
+    void setCofactor(std::vector<float> cofactors) { _cofactors = std::move(cofactors); }
+
     /**
      * Get point data conversion type
      * @return Point data conversion type
