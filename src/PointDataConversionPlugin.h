@@ -5,11 +5,11 @@
 #include <Dataset.h>
 #include <TransformationPlugin.h>
 
-#include <QMap>
+#include "SlidersAction.h"
+
 #include <QString>
-
+#include <QStringList>
 #include <vector>
-
 
 /**
  * Point data conversion plugin class
@@ -121,5 +121,7 @@ private:
     std::vector<float> getArcSinCoFactor() const;
 
 private:
-    mv::gui::DecimalAction   _arcSinFactorAction;    /** Factor for arcsin(value/factor) conversion */
+    bool                    _sameCofactor = true;
+    mv::gui::DecimalAction  _arcSinFactorAction;       /** Factor for arcsin(value/factor) conversion */
+    mv::gui::SlidersAction  _arcSinFactorsAction;      /** Factor for arcsin(value/factor) conversion */
 };

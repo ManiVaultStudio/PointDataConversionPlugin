@@ -37,6 +37,8 @@ find_package(OpenMP)
 set(SOURCES
     src/PointDataConversionPlugin.h
     src/PointDataConversionPlugin.cpp
+    src/SlidersAction.h
+    src/SlidersAction.cpp
 )
 
 set(AUX 

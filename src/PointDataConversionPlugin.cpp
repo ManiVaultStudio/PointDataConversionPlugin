@@ -14,6 +14,10 @@ Q_PLUGIN_METADATA(IID "studio.manivault.PointDataConversionPlugin")
 using namespace mv;
 using namespace mv::gui;
 
+// =============================================================================
+// PointDataConversionPlugin
+// =============================================================================
+
 const QMap<PointDataConversionPlugin::Conversion, QString> PointDataConversionPlugin::CONVERSIONS = QMap<Conversion, QString>({
     { Conversion::Log2, "Log2" },
     { Conversion::ArcSin, "Arcsin" }
@@ -101,9 +105,18 @@ QString PointDataConversionPlugin::getConversionName(const Conversion& conversio
     return CONVERSIONS[conversion];
 }
 
+// =============================================================================
+// PointDataConversionPluginFactory
+// =============================================================================
+
 PointDataConversionPluginFactory::PointDataConversionPluginFactory() :
-    _arcSinFactorAction(this, "Factor", 1.0f, 100.0f, 5.0f, 5.0f)
+    _arcSinFactorAction(this, "Factor", 1.0f, 100.0f, 5.0f, 2),
+    _arcSinFactorsAction(this, "Factors")
 {
+    QStringList opts = { "1", "2", "3" };
+    _arcSinFactorsAction.setOptions(opts);
+    for (const auto& opt : opts)
+        _arcSinFactorsAction.setDataForOption(opt, 5.f, 0.f, 100.f);
 }
 
 PointDataConversionPlugin* PointDataConversionPluginFactory::produce()
@@ -113,7 +126,11 @@ PointDataConversionPlugin* PointDataConversionPluginFactory::produce()
 
 std::vector<float> PointDataConversionPluginFactory::getArcSinCoFactor() const
 {
-    return { _arcSinFactorAction.getValue() };
+    if (_sameCofactor)
+        return { _arcSinFactorAction.getValue() };
+
+    return { _arcSinFactorsAction.getValues() };
+
 }
 
 // TODO: add gui to optionally set per-channel cofactor
@@ -197,7 +214,7 @@ WidgetAction* PointDataConversionPluginFactory::getConfigurationAction(const Poi
             return nullptr;
 
         case PointDataConversionPlugin::Conversion::ArcSin:
-            return createGroupAction(_arcSinFactorAction);
+            return createGroupAction(_arcSinFactorsAction);
     }
 
     return nullptr;
