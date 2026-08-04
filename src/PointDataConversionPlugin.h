@@ -48,9 +48,6 @@ public:
     void transform() override;
 
     /** Set the sinh cofactors */
-    void setCofactor(const std::vector<float>& cofactors) { _cofactors = cofactors; }
-
-    /** Set the sinh cofactors */
     void setCofactor(std::vector<float> cofactors) { _cofactors = std::move(cofactors); }
 
     /**
