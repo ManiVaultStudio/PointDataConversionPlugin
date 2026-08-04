@@ -4,6 +4,7 @@
 
 #include <actions/PluginTriggerAction.h>
 
+#include <atomic>
 #include <cmath>
 
 #include <QDebug>
@@ -41,14 +42,17 @@ void PointDataConversionPlugin::transform()
     task.setProgressDescription(QString("%1 conversion").arg(getConversionName(_conversion)));
     
     points->visitData([this, &points, &task](auto pointData) {
-        std::uint64_t noPointsProcessed = 0;
+        std::atomic_uint64_t noPointsProcessed = 0;
     
-        float cofactor = _cofactors[0];
+        float cofactor          = _cofactors[0];
+        const auto numPointsF   = static_cast<float>(points->getNumPoints());
+        const auto numPointsI   = static_cast<std::int64_t>(points->getNumPoints());
+        const auto numDims      = points->getNumDimensions();
 
-        // TODO: parallelize the outer loop
-        for (std::uint64_t pointIndex = 0; pointIndex < points->getNumPoints(); pointIndex++) {
+#pragma omp parallel for
+        for (std::int64_t pointIndex = 0; pointIndex < numPointsI; pointIndex++) {
 
-            for (std::uint64_t dimensionIndex = 0; dimensionIndex < points->getNumDimensions(); dimensionIndex++) {
+            for (std::uint64_t dimensionIndex = 0; dimensionIndex < numDims; dimensionIndex++) {
                 switch (_conversion)
                 {
                 case Conversion::Log2:
@@ -61,11 +65,13 @@ void PointDataConversionPlugin::transform()
                 }
             }
 
-            // TODO: guard this when parallelizing
-            if (++noPointsProcessed % 1000 == 0) {
-                task.setProgress(static_cast<float>(noPointsProcessed) / static_cast<float>(points->getNumPoints()));
-
-                QApplication::processEvents();
+            if (const auto processed = ++noPointsProcessed;
+                processed % 1000 == 0) {
+#pragma omp critical
+                {
+                    task.setProgress(static_cast<float>(noPointsProcessed) / numPointsF);
+                    QApplication::processEvents();
+                }
             }
         }
 

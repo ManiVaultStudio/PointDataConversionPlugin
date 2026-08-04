@@ -9,7 +9,7 @@ from rules_support import PluginBranchInfo
 
 
 class PointDataConversionPluginConan(ConanFile):
-    """Class to package the PointDataConversionPlugin  using conan
+    """Class to package the PointDataConversionPlugin using conan
 
     Packages both RELEASE and RELWITHDEBINFO.
     Uses rules_support (github.com/ManiVaultStudio/rulessupport) to derive
@@ -68,8 +68,13 @@ class PointDataConversionPluginConan(ConanFile):
         pass
 
     def system_requirements(self):
-        #  May be needed for macOS or Linux
-        pass
+        if os_info.is_macos:
+            installer = SystemPackageTool()
+            installer.install("libomp")
+            proc = subprocess.run("brew --prefix libomp",  shell=True, capture_output=True)
+            subprocess.run(f"ln {proc.stdout.decode('UTF-8').strip()}/lib/libomp.dylib /usr/local/lib/libomp.dylib", shell=True)
+        if os_info.is_linux:
+            self.run("sudo apt update && sudo apt install -y libtbb-dev")
 
     def config_options(self):
         if self.settings.os == "Windows":
@@ -100,8 +105,13 @@ class PointDataConversionPluginConan(ConanFile):
         tc.variables["ManiVault_DIR"] = manivault_dir
 
         # Set some build options
-        tc.variables["MV_UNITY_BUILD"] = "ON"
+        tc.cache_variables["MV_UNITY_BUILD"] = "ON"
         
+        if os_info.is_macos:
+            proc = subprocess.run("brew --prefix libomp", shell=True, capture_output=True)
+            prefix_path = f"{proc.stdout.decode('UTF-8').strip()}"
+            tc.variables["OpenMP_ROOT"] = prefix_path
+            
         tc.generate()
 
     def _configure_cmake(self):
