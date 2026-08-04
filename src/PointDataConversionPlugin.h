@@ -1,6 +1,7 @@
 #pragma once
 
 #include <actions/DecimalAction.h>
+#include <actions/ToggleAction.h>
 
 #include <Dataset.h>
 #include <TransformationPlugin.h>
@@ -70,8 +71,8 @@ public:
     static QString getConversionName(const Conversion& conversion);
 
 private:
-    Conversion          _conversion;      /** Data conversion type */
-    std::vector<float>  _cofactors;
+    Conversion          _conversion = Conversion::ArcSin;
+    std::vector<float>  _cofactors = { 5.f };
 };
 
 /**
@@ -121,7 +122,7 @@ private:
     std::vector<float> getArcSinCoFactor() const;
 
 private:
-    bool                    _sameCofactor = true;
-    mv::gui::DecimalAction  _arcSinFactorAction;       /** Factor for arcsin(value/factor) conversion */
-    mv::gui::SlidersAction  _arcSinFactorsAction;      /** Factor for arcsin(value/factor) conversion */
+    mv::gui::ToggleAction  _sameFactorAction;
+    mv::gui::DecimalAction _arcSinFactorAction;
+    mv::gui::SlidersAction _arcSinFactorsAction;
 };

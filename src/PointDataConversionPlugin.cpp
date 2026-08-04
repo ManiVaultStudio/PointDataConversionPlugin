@@ -24,9 +24,7 @@ const QMap<PointDataConversionPlugin::Conversion, QString> PointDataConversionPl
 });
 
 PointDataConversionPlugin::PointDataConversionPlugin(const mv::plugin::PluginFactory* factory) :
-    TransformationPlugin(factory),
-    _conversion(Conversion::ArcSin),
-    _cofactors({5.f})
+    TransformationPlugin(factory)
 {
 }
 
@@ -52,6 +50,8 @@ void PointDataConversionPlugin::transform()
         const auto numPointsF   = static_cast<float>(points->getNumPoints());
         const auto numPointsI   = static_cast<std::int64_t>(points->getNumPoints());
         const auto numDims      = points->getNumDimensions();
+
+        qDebug() << "PointDataConversionPlugin::transform: cofactor of" << cofactor ;
 
 #pragma omp parallel for
         for (std::int64_t pointIndex = 0; pointIndex < numPointsI; pointIndex++) {
@@ -110,13 +110,23 @@ QString PointDataConversionPlugin::getConversionName(const Conversion& conversio
 // =============================================================================
 
 PointDataConversionPluginFactory::PointDataConversionPluginFactory() :
-    _arcSinFactorAction(this, "Factor", 1.0f, 100.0f, 5.0f, 2),
+    _sameFactorAction(this, "Same factor", true),
+    _arcSinFactorAction(this, "Factor",
+        SlidersAction::OptionData::DEFAULT_MIN, SlidersAction::OptionData::DEFAULT_MAX, 
+        SlidersAction::OptionData::DEFAULT_VALUE, SlidersAction::OptionData::DEFAULT_DECIMALS),
     _arcSinFactorsAction(this, "Factors")
 {
     QStringList opts = { "1", "2", "3" };
     _arcSinFactorsAction.setOptions(opts);
     for (const auto& opt : opts)
         _arcSinFactorsAction.setDataForOption(opt, 5.f, 0.f, 100.f);
+
+    connect(&_sameFactorAction, &ToggleAction::toggled, this, [&](bool toggled)
+    {
+        _arcSinFactorAction.setEnabled(_sameFactorAction.isChecked());
+        _arcSinFactorsAction.setAllSlidersEnabled(!_sameFactorAction.isChecked());
+    });
+
 }
 
 PointDataConversionPlugin* PointDataConversionPluginFactory::produce()
@@ -126,11 +136,10 @@ PointDataConversionPlugin* PointDataConversionPluginFactory::produce()
 
 std::vector<float> PointDataConversionPluginFactory::getArcSinCoFactor() const
 {
-    if (_sameCofactor)
+    if (_sameFactorAction.isChecked())
         return { _arcSinFactorAction.getValue() };
 
-    return { _arcSinFactorsAction.getValues() };
-
+    return _arcSinFactorsAction.getValues();
 }
 
 // TODO: add gui to optionally set per-channel cofactor
@@ -197,13 +206,15 @@ PluginTriggerActions PointDataConversionPluginFactory::getPluginTriggerActions(c
 
 WidgetAction* PointDataConversionPluginFactory::getConfigurationAction(const PointDataConversionPlugin::Conversion& type)
 {
-    const auto createGroupAction = [this](WidgetAction& widgetAction) -> GroupAction* {
+    const auto createGroupAction = [this]() -> GroupAction* {
         auto groupAction = new GroupAction(this, "PointDataConversionGroupAction");
 
         groupAction->setText("Settings");
         groupAction->setToolTip("Data conversion settings");
         groupAction->setLabelSizingType(GroupAction::LabelSizingType::Auto);
-        groupAction->addAction(&widgetAction);
+        groupAction->addAction(&_sameFactorAction);
+        groupAction->addAction(&_arcSinFactorAction);
+        groupAction->addAction(&_arcSinFactorsAction);  // TODO: not correctly enabled on first open
 
         return groupAction;
     };
@@ -214,7 +225,7 @@ WidgetAction* PointDataConversionPluginFactory::getConfigurationAction(const Poi
             return nullptr;
 
         case PointDataConversionPlugin::Conversion::ArcSin:
-            return createGroupAction(_arcSinFactorsAction);
+            return createGroupAction();
     }
 
     return nullptr;
