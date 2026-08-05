@@ -5,6 +5,7 @@
 #include <actions/PluginTriggerAction.h>
 
 #include <atomic>
+#include <cassert>
 #include <cmath>
 
 #include <QDebug>
@@ -46,12 +47,17 @@ void PointDataConversionPlugin::transform()
     points->visitData([this, &points, &task](auto pointData) {
         std::atomic_uint64_t noPointsProcessed = 0;
     
-        float cofactor          = _cofactors[0];
         const auto numPointsF   = static_cast<float>(points->getNumPoints());
         const auto numPointsI   = static_cast<std::int64_t>(points->getNumPoints());
         const auto numDims      = points->getNumDimensions();
 
-        qDebug() << "PointDataConversionPlugin::transform: cofactor of" << cofactor ;
+        assert(!_cofactors.empty());
+        assert(_cofactors.size() == 1 || _cofactors.size() == numDims);
+
+        if (_cofactors.size() == 1)
+            qDebug() << "PointDataConversionPlugin::transform: cofactor of" << _cofactors[0];
+        else
+            qDebug() << "PointDataConversionPlugin::transform: cofactors of" << _cofactors;
 
 #pragma omp parallel for
         for (std::int64_t pointIndex = 0; pointIndex < numPointsI; pointIndex++) {
@@ -64,6 +70,9 @@ void PointDataConversionPlugin::transform()
                     break;
 
                 case Conversion::ArcSin:
+
+                    const float cofactor = (_cofactors.size() == 1)  ? _cofactors[0] : _cofactors[dimensionIndex];
+
                     pointData[pointIndex][dimensionIndex] = std::asinhf(pointData[pointIndex][dimensionIndex] / cofactor);
                     break;
                 }
