@@ -112,21 +112,15 @@ QString PointDataConversionPlugin::getConversionName(const Conversion& conversio
 PointDataConversionPluginFactory::PointDataConversionPluginFactory() :
     _sameFactorAction(this, "Same factor", true),
     _arcSinFactorAction(this, "Factor",
-        SlidersAction::OptionData::DEFAULT_MIN, SlidersAction::OptionData::DEFAULT_MAX, 
-        SlidersAction::OptionData::DEFAULT_VALUE, SlidersAction::OptionData::DEFAULT_DECIMALS),
+        SlidersAction::EntryData::DEFAULT_MIN, SlidersAction::EntryData::DEFAULT_MAX,
+        SlidersAction::EntryData::DEFAULT_VALUE, SlidersAction::EntryData::DEFAULT_DECIMALS),
     _arcSinFactorsAction(this, "Factors")
 {
-    QStringList opts = { "1", "2", "3" };
-    _arcSinFactorsAction.setOptions(opts);
-    for (const auto& opt : opts)
-        _arcSinFactorsAction.setDataForOption(opt, 5.f, 0.f, 100.f);
-
     connect(&_sameFactorAction, &ToggleAction::toggled, this, [&](bool toggled)
     {
         _arcSinFactorAction.setEnabled(_sameFactorAction.isChecked());
         _arcSinFactorsAction.setAllSlidersEnabled(!_sameFactorAction.isChecked());
     });
-
 }
 
 PointDataConversionPlugin* PointDataConversionPluginFactory::produce()
@@ -204,9 +198,14 @@ PluginTriggerActions PointDataConversionPluginFactory::getPluginTriggerActions(c
     return pluginTriggerActions;
 }
 
-WidgetAction* PointDataConversionPluginFactory::getConfigurationAction(const PointDataConversionPlugin::Conversion& type)
+WidgetAction* PointDataConversionPluginFactory::getConfigurationAction(const PointDataConversionPlugin::Conversion& type, const mv::Dataset<mv::DatasetImpl>& inputDataset)
 {
-    const auto createGroupAction = [this]() -> GroupAction* {
+    const auto createGroupAction = [this, &inputDataset]() -> GroupAction* {
+
+        const std::vector<QString> dimNamesVec = mv::Dataset<Points>(inputDataset)->getDimensionNames();
+        const QStringList dimNamesList(dimNamesVec.begin(), dimNamesVec.end());
+        _arcSinFactorsAction.initialize(dimNamesList);
+
         auto groupAction = new GroupAction(this, "PointDataConversionGroupAction");
 
         groupAction->setText("Settings");

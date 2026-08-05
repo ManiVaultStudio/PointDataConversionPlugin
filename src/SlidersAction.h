@@ -24,7 +24,7 @@ namespace mv::gui {
         };
 
     public:
-        struct OptionData {
+        struct EntryData {
             static constexpr float DEFAULT_MIN = 1.0f;
             static constexpr float DEFAULT_MAX = 100.0f;
             static constexpr float DEFAULT_VALUE = 5.0f;
@@ -38,26 +38,27 @@ namespace mv::gui {
     public:
         explicit SlidersAction(QObject* parent, const QString& title);
 
-        void initialize(const QStringList& options = QStringList());
-        void setOptions(const QStringList& options);
+        void initialize(const QStringList& entries = QStringList());
+        void setEntries(const QStringList& entries);
+        void setAllEntriesToDefault();
 
-        void setRangeForOption(const QString& option, float minimum, float maximum);
-        void setValueForOption(const QString& option, float value);
-        void setDataForOption(const QString& option, float value, float minimum, float maximum);
-        [[nodiscard]] float getValueForOption(const QString& option) const;
+        void setRangeForEntry(const QString& entry, float minimum, float maximum);
+        void setValueForEntry(const QString& entry, float value);
+        void setDataForEntry(const QString& entry, float value, float minimum, float maximum);
+        [[nodiscard]] float getValueForEntry(const QString& entry) const;
         [[nodiscard]] std::vector<float> getValues() const;
 
         void setAllSlidersEnabled(bool enabled);
 
     signals:
-        void optionValueChanged(const QString& option, float value);
+        void entryValueChanged(const QString& entry, float value);
 
     protected:
         QWidget* getWidget(QWidget* parent, const std::int32_t& widgetFlags) override;
 
     private:
-        QStringList _options = {};
-        std::unordered_map<QString, OptionData> _optionData = {};
+        QStringList _entries = {};
+        std::unordered_map<QString, EntryData> _entryData = {};
         QListWidget* _sliderList = nullptr;
     };
 }

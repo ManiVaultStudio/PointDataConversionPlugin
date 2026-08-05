@@ -116,7 +116,7 @@ public:
      * Get configuration action for \p type
      * @return Pointer to configuration action (may be null)
      */
-    WidgetAction* getConfigurationAction(const PointDataConversionPlugin::Conversion& type);
+    WidgetAction* getConfigurationAction(const PointDataConversionPlugin::Conversion& type, const mv::Dataset<mv::DatasetImpl>& inputDataset);
 
 private:
     std::vector<float> getArcSinCoFactor() const;

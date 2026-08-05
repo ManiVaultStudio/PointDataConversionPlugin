@@ -14,65 +14,73 @@ SlidersAction::SlidersAction(QObject* parent, const QString& title) :
     setDefaultWidgetFlags(SlidersAction::DisableOnFirstOpen);
 }
 
-void SlidersAction::initialize(const QStringList& options) {
-    setOptions(options);
+void SlidersAction::initialize(const QStringList& entries) {
+    setEntries(entries);
+    setAllEntriesToDefault();
 }
 
-void SlidersAction::setOptions(const QStringList& options) {
-    _options = options;
-    // populate default OptionData if new
-    for (const QString& opt : options) {
-        if (!_optionData.contains(opt)) {
-            _optionData.insert({ opt, OptionData{} });
+void SlidersAction::setEntries(const QStringList& entries) {
+    _entries = entries;
+    // populate default EntryData if new
+    for (const QString& opt : entries) {
+        if (!_entryData.contains(opt)) {
+            _entryData.insert({ opt, EntryData{} });
         }
     }
-    // remove data for removed options
-    for (auto it = _optionData.begin(); it != _optionData.end(); ) {
-        if (!options.contains(it->first))
-            it = _optionData.erase(it);
+    // remove data for removed entries
+    for (auto it = _entryData.begin(); it != _entryData.end(); ) {
+        if (!entries.contains(it->first))
+            it = _entryData.erase(it);
         else ++it;
     }
 }
 
-void SlidersAction::setRangeForOption(const QString& option, float minimum, float maximum) 
+void SlidersAction::setAllEntriesToDefault()
 {
-    if (!_optionData.contains(option)) return;
-    auto& d = _optionData[option];
+    for (const auto& [name, data] : _entryData)
+        setDataForEntry(name, 5.f, 0.f, 100.f);
+
+}
+
+void SlidersAction::setRangeForEntry(const QString& entry, float minimum, float maximum) 
+{
+    if (!_entryData.contains(entry)) return;
+    auto& d = _entryData[entry];
     d.min = minimum;
     d.max = maximum;
     d.value = std::clamp(d.value, d.min, d.max);
 }
 
-void SlidersAction::setValueForOption(const QString& option, float value) 
+void SlidersAction::setValueForEntry(const QString& entry, float value) 
 {
-    if (!_optionData.contains(option)) return;
-    auto& d = _optionData[option];
+    if (!_entryData.contains(entry)) return;
+    auto& d = _entryData[entry];
     value = std::clamp(value, d.min, d.max);
     if (std::abs(d.value - value) < 0.0001f) return;
     d.value = value;
-    emit optionValueChanged(option, value);
+    emit entryValueChanged(entry, value);
 }
 
-void SlidersAction::setDataForOption(const QString& option, float value, float minimum, float maximum) 
+void SlidersAction::setDataForEntry(const QString& entry, float value, float minimum, float maximum) 
 {
-    setRangeForOption(option, minimum, maximum);
-    setValueForOption(option, value);
+    setRangeForEntry(entry, minimum, maximum);
+    setValueForEntry(entry, value);
 }
 
-float SlidersAction::getValueForOption(const QString& option) const 
+float SlidersAction::getValueForEntry(const QString& entry) const 
 {
-    if (!_optionData.contains(option))
+    if (!_entryData.contains(entry))
         return 0.0f;
-    return _optionData.at(option).value;
+    return _entryData.at(entry).value;
 }
 
 std::vector<float> SlidersAction::getValues() const
 {
     std::vector<float> values;
-    values.reserve(_options.size());
+    values.reserve(_entries.size());
 
-    for (const auto& opt : _options)
-        values.push_back(getValueForOption(opt));
+    for (const auto& opt : _entries)
+        values.push_back(getValueForEntry(opt));
 
     return values;
 }
@@ -105,16 +113,16 @@ QWidget* SlidersAction::getWidget(QWidget* parent, const std::int32_t& widgetFla
     _sliderList->setSelectionMode(QAbstractItemView::NoSelection);
     layout->addWidget(_sliderList);
 
-    for (const QString& opt : _options) {
+    for (const QString& opt : _entries) {
         auto* item = new QListWidgetItem(_sliderList);
 
         QWidget* row = new QWidget(_sliderList);
         QHBoxLayout* rowLayout = new QHBoxLayout(row);
         rowLayout->setContentsMargins(2, 2, 2, 2);
 
-        const OptionData& d = _optionData.at(opt);
+        const EntryData& d = _entryData.at(opt);
 
-        DecimalAction* slider = new DecimalAction(this, opt, d.min, d.max, d.value, OptionData::DEFAULT_DECIMALS);
+        DecimalAction* slider = new DecimalAction(this, opt, d.min, d.max, d.value, EntryData::DEFAULT_DECIMALS);
         rowLayout->addWidget(slider->createLabelWidget(container));
         rowLayout->addWidget(slider->createWidget(container));
 
@@ -123,7 +131,7 @@ QWidget* SlidersAction::getWidget(QWidget* parent, const std::int32_t& widgetFla
         item->setSizeHint(row->sizeHint());
 
         connect(slider, &DecimalAction::valueChanged, this, [this, opt](float value) {
-            setValueForOption(opt, value);
+            setValueForEntry(opt, value);
             });
     }
 
