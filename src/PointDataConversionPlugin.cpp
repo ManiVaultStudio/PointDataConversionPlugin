@@ -136,7 +136,6 @@ std::vector<float> PointDataConversionPluginFactory::getArcSinCoFactor() const
     return _arcSinFactorsAction.getValues();
 }
 
-// TODO: add gui to optionally set per-channel cofactor
 PluginTriggerActions PointDataConversionPluginFactory::getPluginTriggerActions(const mv::Datasets& datasets) const
 {
     PluginTriggerActions pluginTriggerActions;
@@ -147,11 +146,7 @@ PluginTriggerActions PointDataConversionPluginFactory::getPluginTriggerActions(c
 
             auto pluginTriggerAction = new PluginTriggerAction(const_cast<PointDataConversionPluginFactory*>(this), this, QString("Conversion/%1").arg(typeName), QString("Perform %1 data conversion").arg(typeName), icon(), [this, datasets, type](PluginTriggerAction& pluginTriggerAction) -> void {
                 for (const auto& dataset : datasets) {
-                    auto pluginInstance = dynamic_cast<PointDataConversionPlugin*>(plugins().requestPlugin(getKind()));
-
-                    pluginInstance->setInputDataset(dataset);
-                    pluginInstance->setConversion(type);
-                    pluginInstance->transform();
+                    const_cast<PointDataConversionPluginFactory*>(this)->openConfigDialog(type, dataset);
                 }
                 });
 
@@ -165,7 +160,7 @@ PluginTriggerActions PointDataConversionPluginFactory::getPluginTriggerActions(c
     return pluginTriggerActions;
 }
 
-// This is used in the image viewer
+// This is used in e.g. the image viewer
 PluginTriggerActions PointDataConversionPluginFactory::getPluginTriggerActions(const mv::DataTypes& dataTypes) const
 {
     PluginTriggerActions pluginTriggerActions;
@@ -176,13 +171,7 @@ PluginTriggerActions PointDataConversionPluginFactory::getPluginTriggerActions(c
 
             auto pluginTriggerAction = new PluginTriggerAction(const_cast<PointDataConversionPluginFactory*>(this), this, QString("Conversion/%1").arg(typeName), QString("Perform %1 data conversion").arg(typeName), icon(), [this, type](PluginTriggerAction& pluginTriggerAction) -> void {
                 for (const auto& dataset : pluginTriggerAction.getDatasets()) {
-                    auto pluginInstance = dynamic_cast<PointDataConversionPlugin*>(plugins().requestPlugin(getKind()));
-
-                    pluginInstance->setInputDataset(dataset);
-                    pluginInstance->setConversion(type);
-                    pluginInstance->setCofactor(getArcSinCoFactor());
-
-                    pluginInstance->transform();
+                    createPluginAndTransform(type, dataset);
                 }
             });
 
@@ -198,22 +187,19 @@ PluginTriggerActions PointDataConversionPluginFactory::getPluginTriggerActions(c
     return pluginTriggerActions;
 }
 
-WidgetAction* PointDataConversionPluginFactory::getConfigurationAction(const PointDataConversionPlugin::Conversion& type, const mv::Dataset<mv::DatasetImpl>& inputDataset)
+WidgetAction* PointDataConversionPluginFactory::getConfigurationAction(const PointDataConversionPlugin::Conversion& type)
 {
-    const auto createGroupAction = [this, &inputDataset]() -> GroupAction* {
+    const auto createGroupAction = [this]() -> GroupAction* {
 
-        const std::vector<QString> dimNamesVec = mv::Dataset<Points>(inputDataset)->getDimensionNames();
-        const QStringList dimNamesList(dimNamesVec.begin(), dimNamesVec.end());
-        _arcSinFactorsAction.initialize(dimNamesList);
+        _arcSinFactorsAction.initialize({});
+        _sameFactorAction.setChecked(true);
 
         auto groupAction = new GroupAction(this, "PointDataConversionGroupAction");
 
         groupAction->setText("Settings");
         groupAction->setToolTip("Data conversion settings");
         groupAction->setLabelSizingType(GroupAction::LabelSizingType::Auto);
-        groupAction->addAction(&_sameFactorAction);
         groupAction->addAction(&_arcSinFactorAction);
-        groupAction->addAction(&_arcSinFactorsAction);
 
         return groupAction;
     };
@@ -228,4 +214,69 @@ WidgetAction* PointDataConversionPluginFactory::getConfigurationAction(const Poi
     }
 
     return nullptr;
+}
+
+
+void PointDataConversionPluginFactory::openConfigDialog(const PointDataConversionPlugin::Conversion& type, const mv::Dataset<mv::DatasetImpl>& inputDataset)
+{
+    _sameFactorAction.setChecked(true);
+    const std::vector<QString> dimNamesVec = mv::Dataset<Points>(inputDataset)->getDimensionNames();
+    const QStringList dimNamesList(dimNamesVec.begin(), dimNamesVec.end());
+    _arcSinFactorsAction.initialize(dimNamesList);
+
+    switch (type)
+    {
+    case PointDataConversionPlugin::Conversion::Log2:
+        createPluginAndTransform(type, inputDataset);
+        break;
+
+    case PointDataConversionPlugin::Conversion::ArcSin:
+    {
+        ConversionDialog inputDialog(nullptr, &_sameFactorAction, &_arcSinFactorAction, &_arcSinFactorsAction);
+        inputDialog.setModal(true);
+        if (inputDialog.exec() == QDialog::Accepted)
+            createPluginAndTransform(type, inputDataset);
+
+        break;
+    }
+    }
+
+}
+
+void PointDataConversionPluginFactory::createPluginAndTransform(const PointDataConversionPlugin::Conversion& type, const mv::Dataset<mv::DatasetImpl>& inputDataset) const
+{
+    auto pluginInstance = dynamic_cast<PointDataConversionPlugin*>(plugins().requestPlugin(getKind()));
+
+    pluginInstance->setInputDataset(inputDataset);
+    pluginInstance->setConversion(type);
+    pluginInstance->setCofactor(getArcSinCoFactor());
+    pluginInstance->transform();
+
+}
+
+// =============================================================================
+// Helper
+// =============================================================================
+
+ConversionDialog::ConversionDialog(QWidget* parent, ToggleAction* sameFactorAction, DecimalAction* arcSinFactorAction, SlidersAction* arcSinFactorsAction) :
+    QDialog(parent), _conversionButton(this, "Convert")
+{
+    setWindowTitle(tr("Data conversion settings"));
+
+    connect(&_conversionButton, &TriggerAction::triggered, this, &ConversionDialog::closeDialogAction);
+
+    auto* layout = new QHBoxLayout();
+
+    auto groupAction = new GroupAction(this, "PointDataConversionGroupAction");
+
+    groupAction->setText("Settings");
+    groupAction->setToolTip("Data conversion settings");
+    groupAction->setLabelSizingType(GroupAction::LabelSizingType::Auto);
+    groupAction->addAction(sameFactorAction);
+    groupAction->addAction(arcSinFactorAction);
+    groupAction->addAction(arcSinFactorsAction);
+    groupAction->addAction(&_conversionButton);
+
+    layout->addWidget(groupAction->createWidget(this));
+    setLayout(layout);
 }
