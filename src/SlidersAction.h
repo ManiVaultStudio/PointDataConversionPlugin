@@ -44,11 +44,13 @@ namespace mv::gui {
 
         void setRangeForEntry(const QString& entry, float minimum, float maximum);
         void setValueForEntry(const QString& entry, float value);
+        void setValueForAllEntries(float value); // also updates sliders
         void setDataForEntry(const QString& entry, float value, float minimum, float maximum);
         [[nodiscard]] float getValueForEntry(const QString& entry) const;
         [[nodiscard]] std::vector<float> getValues() const;
 
         void setAllSlidersEnabled(bool enabled);
+        void setAllSlidersValues(float value);
 
     signals:
         void entryValueChanged(const QString& entry, float value);
@@ -60,5 +62,6 @@ namespace mv::gui {
         QStringList _entries = {};
         std::unordered_map<QString, EntryData> _entryData = {};
         QListWidget* _sliderList = nullptr;
+
     };
 }

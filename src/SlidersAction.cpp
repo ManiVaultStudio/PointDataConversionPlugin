@@ -51,6 +51,14 @@ void SlidersAction::setRangeForEntry(const QString& entry, float minimum, float 
     d.value = std::clamp(d.value, d.min, d.max);
 }
 
+void SlidersAction::setValueForAllEntries(float value)
+{
+    for (const auto& [name, data] : _entryData)
+        setValueForEntry(name, value);
+
+    setAllSlidersValues(value);
+}
+
 void SlidersAction::setValueForEntry(const QString& entry, float value) 
 {
     if (!_entryData.contains(entry)) return;
@@ -101,6 +109,22 @@ void SlidersAction::setAllSlidersEnabled(bool enabled)
 
 }
 
+void SlidersAction::setAllSlidersValues(float value)
+{
+    if (!_sliderList)
+        return;
+
+    for (int i = 0; i < _sliderList->count(); ++i) {
+        QListWidgetItem* item = _sliderList->item(i);
+        if (QWidget* row = _sliderList->itemWidget(item)) {
+            if (auto* slider = row->findChild<DecimalAction*>()) {
+                slider->setValue(value);
+            }
+        }
+    }
+
+}
+
 QWidget* SlidersAction::getWidget(QWidget* parent, const std::int32_t& widgetFlags) 
 {
     auto* container = new QWidget(parent);
@@ -122,7 +146,7 @@ QWidget* SlidersAction::getWidget(QWidget* parent, const std::int32_t& widgetFla
 
         const EntryData& d = _entryData.at(opt);
 
-        DecimalAction* slider = new DecimalAction(this, opt, d.min, d.max, d.value, EntryData::DEFAULT_DECIMALS);
+        DecimalAction* slider = new DecimalAction(row, opt, d.min, d.max, d.value, EntryData::DEFAULT_DECIMALS);
         rowLayout->addWidget(slider->createLabelWidget(container));
         rowLayout->addWidget(slider->createWidget(container));
 

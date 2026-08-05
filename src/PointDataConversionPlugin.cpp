@@ -120,16 +120,35 @@ QString PointDataConversionPlugin::getConversionName(const Conversion& conversio
 
 PointDataConversionPluginFactory::PointDataConversionPluginFactory() :
     _sameFactorAction(this, "Same factor", true),
-    _arcSinFactorAction(this, "Factor",
-        SlidersAction::EntryData::DEFAULT_MIN, SlidersAction::EntryData::DEFAULT_MAX,
-        SlidersAction::EntryData::DEFAULT_VALUE, SlidersAction::EntryData::DEFAULT_DECIMALS),
+    _arcSinFactorAction(this, "Factor"),
     _arcSinFactorsAction(this, "Factors")
 {
+    _arcSinFactorAction.setToolTip("Apply the same cofactors to each channel.");
+    _arcSinFactorsAction.setToolTip("Apply different cofactors to each channel.");
+
+    _arcSinFactorAction.initialize(SlidersAction::EntryData::DEFAULT_MIN, SlidersAction::EntryData::DEFAULT_MAX,
+        SlidersAction::EntryData::DEFAULT_VALUE, SlidersAction::EntryData::DEFAULT_DECIMALS);
+
     connect(&_sameFactorAction, &ToggleAction::toggled, this, [&](bool toggled)
-    {
-        _arcSinFactorAction.setEnabled(_sameFactorAction.isChecked());
-        _arcSinFactorsAction.setAllSlidersEnabled(!_sameFactorAction.isChecked());
-    });
+        {
+            _arcSinFactorAction.setEnabled(_sameFactorAction.isChecked());
+            _arcSinFactorsAction.setAllSlidersEnabled(!_sameFactorAction.isChecked());
+        });
+
+    connect(&_arcSinFactorAction, &DecimalAction::valueChanged, this, [&](float value)
+        {
+            const auto sliderValues = _arcSinFactorsAction.getValues();
+            
+            const bool allEqual = !sliderValues.empty() &&
+            std::all_of(sliderValues.cbegin() + 1, sliderValues.cend(),
+                [&](const float v) { return std::abs(v - sliderValues.front()) < 0.0001f; });
+
+            if (!allEqual)
+                return;
+
+            _arcSinFactorsAction.setValueForAllEntries(value);        
+        });
+
 }
 
 PointDataConversionPlugin* PointDataConversionPluginFactory::produce()
