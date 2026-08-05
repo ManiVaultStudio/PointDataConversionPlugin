@@ -1,8 +1,8 @@
 {
   "name": "PointDataConversion",
   "version" :  {
-      "plugin" : "1.0.0",
-      "core" : ["1.3"]
+      "plugin" : "1.1.0",
+      "core" : ["1.4"]
   },
   "type" : "Transformation",
   "dependencies": [ "Points" ]
