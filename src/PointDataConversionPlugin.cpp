@@ -1,5 +1,7 @@
 #include "PointDataConversionPlugin.h"
 
+#include "SettingsDialogs.h"
+
 #include <PointData/PointData.h>
 
 #include <actions/PluginTriggerAction.h>
@@ -280,31 +282,4 @@ void PointDataConversionPluginFactory::createPluginAndTransform(const PointDataC
     pluginInstance->setCofactor(getArcSinCoFactor());
     pluginInstance->transform();
 
-}
-
-// =============================================================================
-// Helper
-// =============================================================================
-
-ConversionDialog::ConversionDialog(QWidget* parent, ToggleAction* sameFactorAction, DecimalAction* arcSinFactorAction, SlidersAction* arcSinFactorsAction) :
-    QDialog(parent), _conversionButton(this, "Convert")
-{
-    setWindowTitle(tr("Data conversion settings"));
-
-    connect(&_conversionButton, &TriggerAction::triggered, this, &ConversionDialog::closeDialogAction);
-
-    auto* layout = new QHBoxLayout();
-
-    auto groupAction = new GroupAction(this, "PointDataConversionGroupAction");
-
-    groupAction->setText("Settings");
-    groupAction->setToolTip("Data conversion settings");
-    groupAction->setLabelSizingType(GroupAction::LabelSizingType::Auto);
-    groupAction->addAction(sameFactorAction);
-    groupAction->addAction(arcSinFactorAction);
-    groupAction->addAction(arcSinFactorsAction);
-    groupAction->addAction(&_conversionButton);
-
-    layout->addWidget(groupAction->createWidget(this));
-    setLayout(layout);
 }

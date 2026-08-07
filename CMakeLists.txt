@@ -41,6 +41,8 @@ set(SOURCES
     src/PointDataConversionPlugin.cpp
     src/SlidersAction.h
     src/SlidersAction.cpp
+    src/SettingsDialogs.h
+    src/SettingsDialogs.cpp
 )
 
 set(AUX 
