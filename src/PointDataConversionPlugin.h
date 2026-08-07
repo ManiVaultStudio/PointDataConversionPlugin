@@ -26,7 +26,8 @@ public:
     /** Point data conversion type */
     enum class Conversion {
         Log2,       /** log2(value+1) */
-        ArcSin      /** asinh(value/factor) */
+        ArcSin,     /** asinh(value/factor) */
+        ClampMax,   /** clamp (max) value to a percentile of its respective dimension */
     };
 
     static const QMap<Conversion, QString> CONVERSIONS;
@@ -48,8 +49,8 @@ public:
     /** Performs the data transformation */
     void transform() override;
 
-    /** Set the sinh cofactors */
-    void setCofactor(std::vector<float> cofactors) { _cofactors = std::move(cofactors); }
+    /** Set conversion setting */
+    void setConversionSetting(std::vector<float> cofactors) { _conversionSetting = std::move(cofactors); }
 
     /**
      * Get point data conversion type
@@ -72,7 +73,7 @@ public:
 
 private:
     Conversion          _conversion = Conversion::ArcSin;
-    std::vector<float>  _cofactors = { 5.f };
+    std::vector<float>  _conversionSetting = { 5.f };
 };
 
 /**
@@ -129,10 +130,11 @@ public:
     void createPluginAndTransform(const PointDataConversionPlugin::Conversion& type, const mv::Dataset<mv::DatasetImpl>& inputDataset) const;
 
 private:
-    std::vector<float> getArcSinCoFactor() const;
+    std::vector<float> getConversionSetting() const;
 
 private:
-    mv::gui::ToggleAction  _sameFactorAction;
-    mv::gui::DecimalAction _arcSinFactorAction;
-    mv::gui::SlidersAction _arcSinFactorsAction;
+    mv::gui::ToggleAction  _sameChannelSettingAction;
+
+    mv::gui::DecimalAction _singleDecimalSettingAction;
+    mv::gui::SlidersAction _channelWiseDecimalAction;
 };

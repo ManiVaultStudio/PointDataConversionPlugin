@@ -6,10 +6,10 @@
 
 using namespace mv::gui;
 
-ConversionDialog::ConversionDialog(QWidget* parent, ToggleAction* sameFactorAction, DecimalAction* arcSinFactorAction, SlidersAction* arcSinFactorsAction) :
+ConversionDialog::ConversionDialog(QWidget* parent, const QString& transformName, ToggleAction* sameChannelSettingAction, DecimalAction* singleDecimalSettingAction, SlidersAction* channelWiseDecimalAction) :
     QDialog(parent), _conversionButton(this, "Convert")
 {
-    setWindowTitle(tr("Data conversion settings"));
+    setWindowTitle("Settings: " + transformName);
 
     connect(&_conversionButton, &TriggerAction::triggered, this, &ConversionDialog::closeDialogAction);
 
@@ -20,9 +20,9 @@ ConversionDialog::ConversionDialog(QWidget* parent, ToggleAction* sameFactorActi
     groupAction->setText("Settings");
     groupAction->setToolTip("Data conversion settings");
     groupAction->setLabelSizingType(GroupAction::LabelSizingType::Auto);
-    groupAction->addAction(sameFactorAction);
-    groupAction->addAction(arcSinFactorAction);
-    groupAction->addAction(arcSinFactorsAction);
+    groupAction->addAction(sameChannelSettingAction);
+    groupAction->addAction(singleDecimalSettingAction);
+    groupAction->addAction(channelWiseDecimalAction);
     groupAction->addAction(&_conversionButton);
 
     layout->addWidget(groupAction->createWidget(this));

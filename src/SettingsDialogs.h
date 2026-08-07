@@ -17,7 +17,7 @@ class ConversionDialog : public QDialog
 {
     Q_OBJECT
 public:
-    explicit ConversionDialog(QWidget* parent, mv::gui::ToggleAction* sameFactorAction, mv::gui::DecimalAction* arcSinFactorAction, mv::gui::SlidersAction* arcSinFactorsAction);
+    explicit ConversionDialog(QWidget* parent, const QString& transformName, mv::gui::ToggleAction* sameChannelSettingAction, mv::gui::DecimalAction* singleDecimalSettingAction, mv::gui::SlidersAction* channelWiseDecimalAction);
 
 signals:
     void closeDialog(bool onlyIndices);
