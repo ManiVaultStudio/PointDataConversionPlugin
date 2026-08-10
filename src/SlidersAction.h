@@ -3,6 +3,7 @@
 #include <actions/WidgetAction.h>
 
 #include <QListWidget>
+#include <QPointer>
 #include <QString>
 #include <QStringList>
 #include <QWidget>
@@ -61,7 +62,6 @@ namespace mv::gui {
     private:
         QStringList _entries = {};
         std::unordered_map<QString, EntryData> _entryData = {};
-        QListWidget* _sliderList = nullptr;
-
+        QPointer<QListWidget> _sliderList = nullptr;
     };
 }

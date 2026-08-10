@@ -1,12 +1,16 @@
 #include "PointDataConversionPlugin.h"
 
+#include "SettingsDialogs.h"
+
 #include <PointData/PointData.h>
 
 #include <actions/PluginTriggerAction.h>
 
+#include <algorithm>
 #include <atomic>
 #include <cassert>
 #include <cmath>
+#include <limits>
 
 #include <QDebug>
 
@@ -21,8 +25,9 @@ using namespace mv::gui;
 
 const QMap<PointDataConversionPlugin::Conversion, QString> PointDataConversionPlugin::CONVERSIONS = QMap<Conversion, QString>({
     { Conversion::Log2, "Log2" },
-    { Conversion::ArcSin, "Arcsin" }
-});
+    { Conversion::ArcSinh, "Arcsinh" },
+    { Conversion::ClampMax, "Clamp (max)" }
+    });
 
 PointDataConversionPlugin::PointDataConversionPlugin(const mv::plugin::PluginFactory* factory) :
     TransformationPlugin(factory)
@@ -51,29 +56,63 @@ void PointDataConversionPlugin::transform()
         const auto numPointsI   = static_cast<std::int64_t>(points->getNumPoints());
         const auto numDims      = points->getNumDimensions();
 
-        assert(!_cofactors.empty());
-        assert(_cofactors.size() == 1 || _cofactors.size() == numDims);
+        assert(!_conversionSetting.empty());
+        assert(_conversionSetting.size() == 1 || _conversionSetting.size() == numDims);
 
-        if (_cofactors.size() == 1)
-            qDebug() << "PointDataConversionPlugin::transform: cofactor of" << _cofactors[0];
-        else
-            qDebug() << "PointDataConversionPlugin::transform: cofactors of" << _cofactors;
+        std::vector<float> dimMax;
 
+        // Some conversions require a preparation step
+        switch (_conversion)
+        {
+        case Conversion::Log2: break;
+        case Conversion::ArcSinh:  
+            
+            if (_conversionSetting.size() == 1)
+                qDebug() << "PointDataConversionPlugin::transform: cofactor of" << _conversionSetting[0];
+            else
+                qDebug() << "PointDataConversionPlugin::transform: cofactors of" << _conversionSetting;
+
+            break;
+
+        case Conversion::ClampMax:
+
+            dimMax.resize(numDims, std::numeric_limits<float>::lowest());
+
+            for (std::int64_t pointIndex = 0; pointIndex < numPointsI; pointIndex++) {
+                auto point = pointData[pointIndex];
+                for (std::uint64_t dimensionIndex = 0; dimensionIndex < numDims; dimensionIndex++) {
+                    dimMax[dimensionIndex] = std::max(dimMax[dimensionIndex], static_cast<float>(point[dimensionIndex]));
+                }
+            }
+
+            for (std::uint64_t dimensionIndex = 0; dimensionIndex < numDims; dimensionIndex++) {
+                const float percentile = ((_conversionSetting.size() == 1) ? _conversionSetting[0] : _conversionSetting[dimensionIndex]) * 0.01f; // setting is in [1, 100] but we want %
+                dimMax[dimensionIndex] = percentile * dimMax[dimensionIndex];
+            }
+
+        }
+
+
+        // Convert each point
 #pragma omp parallel for
         for (std::int64_t pointIndex = 0; pointIndex < numPointsI; pointIndex++) {
-
+            auto point = pointData[pointIndex];
             for (std::uint64_t dimensionIndex = 0; dimensionIndex < numDims; dimensionIndex++) {
                 switch (_conversion)
                 {
                 case Conversion::Log2:
-                    pointData[pointIndex][dimensionIndex] = std::log2f(pointData[pointIndex][dimensionIndex] + 1.0f);
+                    point[dimensionIndex] = std::log2f(point[dimensionIndex] + 1.0f);
                     break;
 
-                case Conversion::ArcSin:
+                case Conversion::ArcSinh:
+                {
+                    const float cofactor = (_conversionSetting.size() == 1)  ? _conversionSetting[0] : _conversionSetting[dimensionIndex];
+                    point[dimensionIndex] = std::asinhf(point[dimensionIndex] / cofactor);
+                    break;
+                }
 
-                    const float cofactor = (_cofactors.size() == 1)  ? _cofactors[0] : _cofactors[dimensionIndex];
-
-                    pointData[pointIndex][dimensionIndex] = std::asinhf(pointData[pointIndex][dimensionIndex] / cofactor);
+                case Conversion::ClampMax:
+                    point[dimensionIndex] = std::min(static_cast<float>(point[dimensionIndex]), dimMax[dimensionIndex]);
                     break;
                 }
             }
@@ -119,25 +158,25 @@ QString PointDataConversionPlugin::getConversionName(const Conversion& conversio
 // =============================================================================
 
 PointDataConversionPluginFactory::PointDataConversionPluginFactory() :
-    _sameFactorAction(this, "Same factor", true),
-    _arcSinFactorAction(this, "Factor"),
-    _arcSinFactorsAction(this, "Factors")
+    _sameChannelSettingAction(this, "Same factor", true),
+    _singleDecimalSettingAction(this, "Factor"),
+    _channelWiseDecimalAction(this, "Factors")
 {
-    _arcSinFactorAction.setToolTip("Apply the same cofactors to each channel.");
-    _arcSinFactorsAction.setToolTip("Apply different cofactors to each channel.");
+    _singleDecimalSettingAction.setToolTip("Apply the same cofactors to each channel.");
+    _channelWiseDecimalAction.setToolTip("Apply different cofactors to each channel.");
 
-    _arcSinFactorAction.initialize(SlidersAction::EntryData::DEFAULT_MIN, SlidersAction::EntryData::DEFAULT_MAX,
+    _singleDecimalSettingAction.initialize(SlidersAction::EntryData::DEFAULT_MIN, SlidersAction::EntryData::DEFAULT_MAX,
         SlidersAction::EntryData::DEFAULT_VALUE, SlidersAction::EntryData::DEFAULT_DECIMALS);
 
-    connect(&_sameFactorAction, &ToggleAction::toggled, this, [&](bool toggled)
+    connect(&_sameChannelSettingAction, &ToggleAction::toggled, this, [&](bool toggled)
         {
-            _arcSinFactorAction.setEnabled(_sameFactorAction.isChecked());
-            _arcSinFactorsAction.setAllSlidersEnabled(!_sameFactorAction.isChecked());
+            _singleDecimalSettingAction.setEnabled(_sameChannelSettingAction.isChecked());
+            _channelWiseDecimalAction.setAllSlidersEnabled(!_sameChannelSettingAction.isChecked());
         });
 
-    connect(&_arcSinFactorAction, &DecimalAction::valueChanged, this, [&](float value)
+    connect(&_singleDecimalSettingAction, &DecimalAction::valueChanged, this, [&](float value)
         {
-            const auto sliderValues = _arcSinFactorsAction.getValues();
+            const auto sliderValues = _channelWiseDecimalAction.getValues();
             
             const bool allEqual = !sliderValues.empty() &&
             std::all_of(sliderValues.cbegin() + 1, sliderValues.cend(),
@@ -146,7 +185,7 @@ PointDataConversionPluginFactory::PointDataConversionPluginFactory() :
             if (!allEqual)
                 return;
 
-            _arcSinFactorsAction.setValueForAllEntries(value);        
+            _channelWiseDecimalAction.setValueForAllEntries(value);
         });
 
 }
@@ -156,12 +195,12 @@ PointDataConversionPlugin* PointDataConversionPluginFactory::produce()
     return new PointDataConversionPlugin(this);
 }
 
-std::vector<float> PointDataConversionPluginFactory::getArcSinCoFactor() const
+std::vector<float> PointDataConversionPluginFactory::getConversionSetting() const
 {
-    if (_sameFactorAction.isChecked())
-        return { _arcSinFactorAction.getValue() };
+    if (_sameChannelSettingAction.isChecked())
+        return { _singleDecimalSettingAction.getValue() };
 
-    return _arcSinFactorsAction.getValues();
+    return _channelWiseDecimalAction.getValues();
 }
 
 PluginTriggerActions PointDataConversionPluginFactory::getPluginTriggerActions(const mv::Datasets& datasets) const
@@ -182,7 +221,8 @@ PluginTriggerActions PointDataConversionPluginFactory::getPluginTriggerActions(c
             };
 
         addPluginTriggerAction(PointDataConversionPlugin::Conversion::Log2);
-        addPluginTriggerAction(PointDataConversionPlugin::Conversion::ArcSin);
+        addPluginTriggerAction(PointDataConversionPlugin::Conversion::ArcSinh);
+        addPluginTriggerAction(PointDataConversionPlugin::Conversion::ClampMax);
     }
 
     return pluginTriggerActions;
@@ -209,7 +249,8 @@ PluginTriggerActions PointDataConversionPluginFactory::getPluginTriggerActions(c
         };
 
         addPluginTriggerAction(PointDataConversionPlugin::Conversion::Log2);
-        addPluginTriggerAction(PointDataConversionPlugin::Conversion::ArcSin);
+        addPluginTriggerAction(PointDataConversionPlugin::Conversion::ArcSinh);
+        addPluginTriggerAction(PointDataConversionPlugin::Conversion::ClampMax);
     }
 
     return pluginTriggerActions;
@@ -219,38 +260,51 @@ WidgetAction* PointDataConversionPluginFactory::getConfigurationAction(const Poi
 {
     const auto createGroupAction = [this]() -> GroupAction* {
 
-        _arcSinFactorsAction.initialize({});
-        _sameFactorAction.setChecked(true);
+        _channelWiseDecimalAction.initialize({});
+        _sameChannelSettingAction.setChecked(true);
 
         auto groupAction = new GroupAction(this, "PointDataConversionGroupAction");
 
         groupAction->setText("Settings");
         groupAction->setToolTip("Data conversion settings");
         groupAction->setLabelSizingType(GroupAction::LabelSizingType::Auto);
-        groupAction->addAction(&_arcSinFactorAction);
+        groupAction->addAction(&_singleDecimalSettingAction);
 
         return groupAction;
     };
 
+    WidgetAction* configAction = nullptr;
+    setConfigDialogDefaultSettings(type);
+
     switch (type)
     {
         case PointDataConversionPlugin::Conversion::Log2:
-            return nullptr;
+            break;
 
-        case PointDataConversionPlugin::Conversion::ArcSin:
-            return createGroupAction();
+        case PointDataConversionPlugin::Conversion::ArcSinh:
+        {
+            configAction = createGroupAction();
+            break;
+        }
+
+        case PointDataConversionPlugin::Conversion::ClampMax:
+        {
+            configAction = createGroupAction();
+            break;
+        }
     }
 
-    return nullptr;
+    return configAction;
 }
-
 
 void PointDataConversionPluginFactory::openConfigDialog(const PointDataConversionPlugin::Conversion& type, const mv::Dataset<mv::DatasetImpl>& inputDataset)
 {
-    _sameFactorAction.setChecked(true);
+    _sameChannelSettingAction.setChecked(true);
     const std::vector<QString> dimNamesVec = mv::Dataset<Points>(inputDataset)->getDimensionNames();
     const QStringList dimNamesList(dimNamesVec.begin(), dimNamesVec.end());
-    _arcSinFactorsAction.initialize(dimNamesList);
+    _channelWiseDecimalAction.initialize(dimNamesList);
+
+    setConfigDialogDefaultSettings(type);
 
     switch (type)
     {
@@ -258,9 +312,20 @@ void PointDataConversionPluginFactory::openConfigDialog(const PointDataConversio
         createPluginAndTransform(type, inputDataset);
         break;
 
-    case PointDataConversionPlugin::Conversion::ArcSin:
+    case PointDataConversionPlugin::Conversion::ArcSinh:
     {
-        ConversionDialog inputDialog(nullptr, &_sameFactorAction, &_arcSinFactorAction, &_arcSinFactorsAction);
+        ConversionDialog inputDialog(nullptr, PointDataConversionPlugin::CONVERSIONS[PointDataConversionPlugin::Conversion::ArcSinh],
+            &_sameChannelSettingAction, &_singleDecimalSettingAction, &_channelWiseDecimalAction);
+        inputDialog.setModal(true);
+        if (inputDialog.exec() == QDialog::Accepted)
+            createPluginAndTransform(type, inputDataset);
+
+        break;
+    }
+    case PointDataConversionPlugin::Conversion::ClampMax:
+    {
+        ConversionDialog inputDialog(nullptr, PointDataConversionPlugin::CONVERSIONS[PointDataConversionPlugin::Conversion::ClampMax],
+            &_sameChannelSettingAction, &_singleDecimalSettingAction, &_channelWiseDecimalAction);
         inputDialog.setModal(true);
         if (inputDialog.exec() == QDialog::Accepted)
             createPluginAndTransform(type, inputDataset);
@@ -271,40 +336,40 @@ void PointDataConversionPluginFactory::openConfigDialog(const PointDataConversio
 
 }
 
+void PointDataConversionPluginFactory::setConfigDialogDefaultSettings(const PointDataConversionPlugin::Conversion& type)
+{
+    switch (type)
+    {
+    case PointDataConversionPlugin::Conversion::Log2:
+        break;
+
+    case PointDataConversionPlugin::Conversion::ArcSinh:
+    {
+        _singleDecimalSettingAction.setText("Cofactor");
+        _singleDecimalSettingAction.setValue(5.f);
+        _channelWiseDecimalAction.setText("Cofactors");
+        _channelWiseDecimalAction.setValueForAllEntries(99.f);
+        break;
+    }
+    case PointDataConversionPlugin::Conversion::ClampMax:
+    {
+        _singleDecimalSettingAction.setText("Percentile");
+        _singleDecimalSettingAction.setValue(99.f);
+        _channelWiseDecimalAction.setText("Percentiles");
+        _channelWiseDecimalAction.setValueForAllEntries(99.f);
+        break;
+    }
+
+    }
+}
+
 void PointDataConversionPluginFactory::createPluginAndTransform(const PointDataConversionPlugin::Conversion& type, const mv::Dataset<mv::DatasetImpl>& inputDataset) const
 {
     auto pluginInstance = dynamic_cast<PointDataConversionPlugin*>(plugins().requestPlugin(getKind()));
 
     pluginInstance->setInputDataset(inputDataset);
     pluginInstance->setConversion(type);
-    pluginInstance->setCofactor(getArcSinCoFactor());
+    pluginInstance->setConversionSetting(getConversionSetting());
     pluginInstance->transform();
 
-}
-
-// =============================================================================
-// Helper
-// =============================================================================
-
-ConversionDialog::ConversionDialog(QWidget* parent, ToggleAction* sameFactorAction, DecimalAction* arcSinFactorAction, SlidersAction* arcSinFactorsAction) :
-    QDialog(parent), _conversionButton(this, "Convert")
-{
-    setWindowTitle(tr("Data conversion settings"));
-
-    connect(&_conversionButton, &TriggerAction::triggered, this, &ConversionDialog::closeDialogAction);
-
-    auto* layout = new QHBoxLayout();
-
-    auto groupAction = new GroupAction(this, "PointDataConversionGroupAction");
-
-    groupAction->setText("Settings");
-    groupAction->setToolTip("Data conversion settings");
-    groupAction->setLabelSizingType(GroupAction::LabelSizingType::Auto);
-    groupAction->addAction(sameFactorAction);
-    groupAction->addAction(arcSinFactorAction);
-    groupAction->addAction(arcSinFactorsAction);
-    groupAction->addAction(&_conversionButton);
-
-    layout->addWidget(groupAction->createWidget(this));
-    setLayout(layout);
 }

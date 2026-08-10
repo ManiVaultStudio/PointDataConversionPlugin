@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.22)
 
+option(MV_UNITY_BUILD "Combine target source files into batches for faster compilation" OFF)
+
 # -----------------------------------------------------------------------------
 # PointDataConversion Plugin
 # -----------------------------------------------------------------------------
@@ -39,6 +41,8 @@ set(SOURCES
     src/PointDataConversionPlugin.cpp
     src/SlidersAction.h
     src/SlidersAction.cpp
+    src/SettingsDialogs.h
+    src/SettingsDialogs.cpp
 )
 
 set(AUX 
@@ -64,6 +68,7 @@ target_compile_features(${PROJECT} PRIVATE cxx_std_20)
 
 set_target_properties(${PROJECT} PROPERTIES 
     AUTOMOC ON
+    UNITY_BUILD ${MV_UNITY_BUILD}
 )
 
 # -----------------------------------------------------------------------------

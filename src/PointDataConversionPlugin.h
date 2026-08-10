@@ -26,7 +26,8 @@ public:
     /** Point data conversion type */
     enum class Conversion {
         Log2,       /** log2(value+1) */
-        ArcSin      /** asinh(value/factor) */
+        ArcSinh,     /** asinh(value/factor), inverse hyperbolic sine */
+        ClampMax,   /** clamp (max) value to a percentile of its respective dimension */
     };
 
     static const QMap<Conversion, QString> CONVERSIONS;
@@ -39,17 +40,14 @@ public:
      */
     PointDataConversionPlugin(const mv::plugin::PluginFactory* factory);
 
-    /** Destructor */
-    ~PointDataConversionPlugin() override = default;
-    
     /** Initialization is called when the plugin is first instantiated. */
     void init() override {}
 
     /** Performs the data transformation */
     void transform() override;
 
-    /** Set the sinh cofactors */
-    void setCofactor(std::vector<float> cofactors) { _cofactors = std::move(cofactors); }
+    /** Set conversion setting */
+    void setConversionSetting(std::vector<float> cofactors) { _conversionSetting = std::move(cofactors); }
 
     /**
      * Get point data conversion type
@@ -71,8 +69,8 @@ public:
     static QString getConversionName(const Conversion& conversion);
 
 private:
-    Conversion          _conversion = Conversion::ArcSin;
-    std::vector<float>  _cofactors = { 5.f };
+    Conversion          _conversion = Conversion::ArcSinh;
+    std::vector<float>  _conversionSetting = { 5.f };
 };
 
 /**
@@ -92,9 +90,6 @@ public:
     /** Default constructor */
     PointDataConversionPluginFactory();
 
-    /** Destructor */
-    ~PointDataConversionPluginFactory() override {}
-    
     /** Creates an instance of the point data conversion plugin */
     PointDataConversionPlugin* produce() override;
 
@@ -129,33 +124,13 @@ public:
     void createPluginAndTransform(const PointDataConversionPlugin::Conversion& type, const mv::Dataset<mv::DatasetImpl>& inputDataset) const;
 
 private:
-    std::vector<float> getArcSinCoFactor() const;
+    [[nodiscard]] std::vector<float> getConversionSetting() const;
+
+    void setConfigDialogDefaultSettings(const PointDataConversionPlugin::Conversion& type);
 
 private:
-    mv::gui::ToggleAction  _sameFactorAction;
-    mv::gui::DecimalAction _arcSinFactorAction;
-    mv::gui::SlidersAction _arcSinFactorsAction;
-};
+    mv::gui::ToggleAction  _sameChannelSettingAction;
 
-/**
- * Helper dialog to set conversion options
- *
- * @author Alex Vieth
- */
-class ConversionDialog : public QDialog
-{
-    Q_OBJECT
-public:
-    explicit ConversionDialog(QWidget* parent, mv::gui::ToggleAction* sameFactorAction, mv::gui::DecimalAction* arcSinFactorAction, mv::gui::SlidersAction* arcSinFactorsAction);
-
-signals:
-    void closeDialog(bool onlyIndices);
-
-private slots:
-    void closeDialogAction() {
-        emit QDialog::accept();
-    }
-
-private:
-    mv::gui::TriggerAction _conversionButton;
+    mv::gui::DecimalAction _singleDecimalSettingAction;
+    mv::gui::SlidersAction _channelWiseDecimalAction;
 };
