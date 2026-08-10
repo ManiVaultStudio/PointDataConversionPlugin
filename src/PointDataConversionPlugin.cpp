@@ -25,7 +25,7 @@ using namespace mv::gui;
 
 const QMap<PointDataConversionPlugin::Conversion, QString> PointDataConversionPlugin::CONVERSIONS = QMap<Conversion, QString>({
     { Conversion::Log2, "Log2" },
-    { Conversion::ArcSin, "Arcsin" },
+    { Conversion::ArcSinh, "Arcsinh" },
     { Conversion::ClampMax, "Clamp (max)" }
     });
 
@@ -65,7 +65,7 @@ void PointDataConversionPlugin::transform()
         switch (_conversion)
         {
         case Conversion::Log2: break;
-        case Conversion::ArcSin:  
+        case Conversion::ArcSinh:  
             
             if (_conversionSetting.size() == 1)
                 qDebug() << "PointDataConversionPlugin::transform: cofactor of" << _conversionSetting[0];
@@ -104,7 +104,7 @@ void PointDataConversionPlugin::transform()
                     point[dimensionIndex] = std::log2f(point[dimensionIndex] + 1.0f);
                     break;
 
-                case Conversion::ArcSin:
+                case Conversion::ArcSinh:
                 {
                     const float cofactor = (_conversionSetting.size() == 1)  ? _conversionSetting[0] : _conversionSetting[dimensionIndex];
                     point[dimensionIndex] = std::asinhf(point[dimensionIndex] / cofactor);
@@ -221,7 +221,7 @@ PluginTriggerActions PointDataConversionPluginFactory::getPluginTriggerActions(c
             };
 
         addPluginTriggerAction(PointDataConversionPlugin::Conversion::Log2);
-        addPluginTriggerAction(PointDataConversionPlugin::Conversion::ArcSin);
+        addPluginTriggerAction(PointDataConversionPlugin::Conversion::ArcSinh);
         addPluginTriggerAction(PointDataConversionPlugin::Conversion::ClampMax);
     }
 
@@ -249,7 +249,7 @@ PluginTriggerActions PointDataConversionPluginFactory::getPluginTriggerActions(c
         };
 
         addPluginTriggerAction(PointDataConversionPlugin::Conversion::Log2);
-        addPluginTriggerAction(PointDataConversionPlugin::Conversion::ArcSin);
+        addPluginTriggerAction(PointDataConversionPlugin::Conversion::ArcSinh);
         addPluginTriggerAction(PointDataConversionPlugin::Conversion::ClampMax);
     }
 
@@ -280,7 +280,7 @@ WidgetAction* PointDataConversionPluginFactory::getConfigurationAction(const Poi
         case PointDataConversionPlugin::Conversion::Log2:
             break;
 
-        case PointDataConversionPlugin::Conversion::ArcSin:
+        case PointDataConversionPlugin::Conversion::ArcSinh:
         {
             _singleDecimalSettingAction.setText("Cofactor");
             _singleDecimalSettingAction.setValue(5.f);
@@ -314,14 +314,14 @@ void PointDataConversionPluginFactory::openConfigDialog(const PointDataConversio
         createPluginAndTransform(type, inputDataset);
         break;
 
-    case PointDataConversionPlugin::Conversion::ArcSin:
+    case PointDataConversionPlugin::Conversion::ArcSinh:
     {
         _singleDecimalSettingAction.setText("Cofactor");
         _singleDecimalSettingAction.setValue(5.f);
         _channelWiseDecimalAction.setText("Cofactors");
         _channelWiseDecimalAction.setValueForAllEntries(99.f);
 
-        ConversionDialog inputDialog(nullptr, PointDataConversionPlugin::CONVERSIONS[PointDataConversionPlugin::Conversion::ArcSin],
+        ConversionDialog inputDialog(nullptr, PointDataConversionPlugin::CONVERSIONS[PointDataConversionPlugin::Conversion::ArcSinh],
             &_sameChannelSettingAction, &_singleDecimalSettingAction, &_channelWiseDecimalAction);
         inputDialog.setModal(true);
         if (inputDialog.exec() == QDialog::Accepted)

@@ -26,7 +26,7 @@ public:
     /** Point data conversion type */
     enum class Conversion {
         Log2,       /** log2(value+1) */
-        ArcSin,     /** asinh(value/factor) */
+        ArcSinh,     /** asinh(value/factor), inverse hyperbolic sine */
         ClampMax,   /** clamp (max) value to a percentile of its respective dimension */
     };
 
@@ -72,7 +72,7 @@ public:
     static QString getConversionName(const Conversion& conversion);
 
 private:
-    Conversion          _conversion = Conversion::ArcSin;
+    Conversion          _conversion = Conversion::ArcSinh;
     std::vector<float>  _conversionSetting = { 5.f };
 };
 
