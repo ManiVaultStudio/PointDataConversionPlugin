@@ -11,7 +11,7 @@ Applies an element-wise transformation to a selected dataset in-place.
 Implemented transformations:
 - [Inverse hyperbolic sine](https://en.wikipedia.org/wiki/Inverse_hyperbolic_functions) (`asinh`)
 - [Binary logarithm](https://en.wikipedia.org/wiki/Binary_logarithm) (`log2`)
-- [Clamp (max)](https://en.wikipedia.org/wiki/Clamp_(function)) (`clamp (max)`)
+- [Clamp percentile (max)](https://en.wikipedia.org/wiki/Clamp_(function)) (`clamp (max)`)
 
 ## How to use
 - Right-click on a point dataset and select `Transform` -> `Conversion` and chose the transformation function
