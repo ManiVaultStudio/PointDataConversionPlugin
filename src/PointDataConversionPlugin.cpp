@@ -274,6 +274,7 @@ WidgetAction* PointDataConversionPluginFactory::getConfigurationAction(const Poi
     };
 
     WidgetAction* configAction = nullptr;
+    setConfigDialogDefaultSettings(type);
 
     switch (type)
     {
@@ -282,8 +283,6 @@ WidgetAction* PointDataConversionPluginFactory::getConfigurationAction(const Poi
 
         case PointDataConversionPlugin::Conversion::ArcSinh:
         {
-            _singleDecimalSettingAction.setText("Cofactor");
-            _singleDecimalSettingAction.setValue(5.f);
             configAction = createGroupAction();
             break;
         }
@@ -291,8 +290,6 @@ WidgetAction* PointDataConversionPluginFactory::getConfigurationAction(const Poi
         case PointDataConversionPlugin::Conversion::ClampMax:
         {
             configAction = createGroupAction();
-            _singleDecimalSettingAction.setText("Percentile");
-            _singleDecimalSettingAction.setValue(99.f);
             break;
         }
     }
@@ -300,13 +297,14 @@ WidgetAction* PointDataConversionPluginFactory::getConfigurationAction(const Poi
     return configAction;
 }
 
-
 void PointDataConversionPluginFactory::openConfigDialog(const PointDataConversionPlugin::Conversion& type, const mv::Dataset<mv::DatasetImpl>& inputDataset)
 {
     _sameChannelSettingAction.setChecked(true);
     const std::vector<QString> dimNamesVec = mv::Dataset<Points>(inputDataset)->getDimensionNames();
     const QStringList dimNamesList(dimNamesVec.begin(), dimNamesVec.end());
     _channelWiseDecimalAction.initialize(dimNamesList);
+
+    setConfigDialogDefaultSettings(type);
 
     switch (type)
     {
@@ -316,11 +314,6 @@ void PointDataConversionPluginFactory::openConfigDialog(const PointDataConversio
 
     case PointDataConversionPlugin::Conversion::ArcSinh:
     {
-        _singleDecimalSettingAction.setText("Cofactor");
-        _singleDecimalSettingAction.setValue(5.f);
-        _channelWiseDecimalAction.setText("Cofactors");
-        _channelWiseDecimalAction.setValueForAllEntries(99.f);
-
         ConversionDialog inputDialog(nullptr, PointDataConversionPlugin::CONVERSIONS[PointDataConversionPlugin::Conversion::ArcSinh],
             &_sameChannelSettingAction, &_singleDecimalSettingAction, &_channelWiseDecimalAction);
         inputDialog.setModal(true);
@@ -331,11 +324,6 @@ void PointDataConversionPluginFactory::openConfigDialog(const PointDataConversio
     }
     case PointDataConversionPlugin::Conversion::ClampMax:
     {
-        _singleDecimalSettingAction.setText("Percentile");
-        _singleDecimalSettingAction.setValue(99.f);
-        _channelWiseDecimalAction.setText("Percentiles");
-        _channelWiseDecimalAction.setValueForAllEntries(99.f);
-
         ConversionDialog inputDialog(nullptr, PointDataConversionPlugin::CONVERSIONS[PointDataConversionPlugin::Conversion::ClampMax],
             &_sameChannelSettingAction, &_singleDecimalSettingAction, &_channelWiseDecimalAction);
         inputDialog.setModal(true);
@@ -346,6 +334,33 @@ void PointDataConversionPluginFactory::openConfigDialog(const PointDataConversio
     }
     }
 
+}
+
+void PointDataConversionPluginFactory::setConfigDialogDefaultSettings(const PointDataConversionPlugin::Conversion& type)
+{
+    switch (type)
+    {
+    case PointDataConversionPlugin::Conversion::Log2:
+        break;
+
+    case PointDataConversionPlugin::Conversion::ArcSinh:
+    {
+        _singleDecimalSettingAction.setText("Cofactor");
+        _singleDecimalSettingAction.setValue(5.f);
+        _channelWiseDecimalAction.setText("Cofactors");
+        _channelWiseDecimalAction.setValueForAllEntries(99.f);
+        break;
+    }
+    case PointDataConversionPlugin::Conversion::ClampMax:
+    {
+        _singleDecimalSettingAction.setText("Percentile");
+        _singleDecimalSettingAction.setValue(99.f);
+        _channelWiseDecimalAction.setText("Percentiles");
+        _channelWiseDecimalAction.setValueForAllEntries(99.f);
+        break;
+    }
+
+    }
 }
 
 void PointDataConversionPluginFactory::createPluginAndTransform(const PointDataConversionPlugin::Conversion& type, const mv::Dataset<mv::DatasetImpl>& inputDataset) const

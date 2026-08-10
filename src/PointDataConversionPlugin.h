@@ -132,6 +132,8 @@ public:
 private:
     std::vector<float> getConversionSetting() const;
 
+    void setConfigDialogDefaultSettings(const PointDataConversionPlugin::Conversion& type);
+
 private:
     mv::gui::ToggleAction  _sameChannelSettingAction;
 
