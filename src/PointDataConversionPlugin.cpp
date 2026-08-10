@@ -96,23 +96,23 @@ void PointDataConversionPlugin::transform()
         // Convert each point
 #pragma omp parallel for
         for (std::int64_t pointIndex = 0; pointIndex < numPointsI; pointIndex++) {
-
+            auto point = pointData[pointIndex];
             for (std::uint64_t dimensionIndex = 0; dimensionIndex < numDims; dimensionIndex++) {
                 switch (_conversion)
                 {
                 case Conversion::Log2:
-                    pointData[pointIndex][dimensionIndex] = std::log2f(pointData[pointIndex][dimensionIndex] + 1.0f);
+                    point[dimensionIndex] = std::log2f(point[dimensionIndex] + 1.0f);
                     break;
 
                 case Conversion::ArcSin:
                 {
                     const float cofactor = (_conversionSetting.size() == 1)  ? _conversionSetting[0] : _conversionSetting[dimensionIndex];
-                    pointData[pointIndex][dimensionIndex] = std::asinhf(pointData[pointIndex][dimensionIndex] / cofactor);
+                    point[dimensionIndex] = std::asinhf(point[dimensionIndex] / cofactor);
                     break;
                 }
 
                 case Conversion::ClampMax:
-                    pointData[pointIndex][dimensionIndex] = std::min(static_cast<float>(pointData[pointIndex][dimensionIndex]), dimMax[dimensionIndex]);
+                    point[dimensionIndex] = std::min(static_cast<float>(point[dimensionIndex]), dimMax[dimensionIndex]);
                     break;
                 }
             }
