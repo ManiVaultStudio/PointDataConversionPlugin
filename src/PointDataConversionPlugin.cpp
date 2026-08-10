@@ -32,10 +32,10 @@ const QMap<PointDataConversionPlugin::Conversion, QString> PointDataConversionPl
 
 static constexpr float COFACTOR_MIN = 1.0f;
 static constexpr float COFACTOR_MAX = 100.0f;
-static constexpr float COFACTOR_VALUE = 5.0f;
+static constexpr float COFACTOR_DEFAULT = 5.0f;
 static constexpr float PERCENTILE_MIN = 0.0f;
 static constexpr float PERCENTILE_MAX = 100.0f;
-static constexpr float PERCENTILE_VALUE = 99.0f;
+static constexpr float PERCENTILE_DEFAULT = 99.0f;
 
 PointDataConversionPlugin::PointDataConversionPlugin(const mv::plugin::PluginFactory* factory) :
     TransformationPlugin(factory)
@@ -72,7 +72,7 @@ void PointDataConversionPlugin::transform()
         // Some conversions require a preparation step
         switch (_conversion)
         {
-        case Conversion::Log2: break;
+        case Conversion::Log2: [[fallthrough]];
         case Conversion::Log1p: break;
         case Conversion::ArcSinh:  
             
@@ -184,8 +184,8 @@ PointDataConversionPluginFactory::PointDataConversionPluginFactory() :
     _percentileAction.setToolTip("Apply the same percentile to each channel.");
     _percentilesAction.setToolTip("Apply different percentiles to each channel.");
 
-    _arcSinFactorAction.initialize(COFACTOR_MIN, COFACTOR_MAX, COFACTOR_VALUE, SlidersAction::DEFAULT_DECIMALS);
-    _percentileAction.initialize(PERCENTILE_MIN, PERCENTILE_MAX, PERCENTILE_VALUE, SlidersAction::DEFAULT_DECIMALS);
+    _arcSinFactorAction.initialize(COFACTOR_MIN, COFACTOR_MAX, COFACTOR_DEFAULT, SlidersAction::DEFAULT_DECIMALS);
+    _percentileAction.initialize(PERCENTILE_MIN, PERCENTILE_MAX, PERCENTILE_DEFAULT, SlidersAction::DEFAULT_DECIMALS);
 
     connect(&_sameChannelSettingAction, &ToggleAction::toggled, this, [&](bool toggled)
         {
@@ -405,16 +405,16 @@ void PointDataConversionPluginFactory::setConfigDialogDefaultSettings(const Poin
 
     case PointDataConversionPlugin::Conversion::ArcSinh:
     {
-        _arcSinFactorAction.setValue(5.f);
+        _arcSinFactorAction.setValue(COFACTOR_DEFAULT);
         _arcSinFactorsAction.setEntries(dimensionNames);
-        _arcSinFactorsAction.setValueForAllEntries(5.f);
+        _arcSinFactorsAction.setValueForAllEntries(COFACTOR_DEFAULT);
         break;
     }
     case PointDataConversionPlugin::Conversion::ClampMax:
     {
-        _percentileAction.setValue(99.f);
+        _percentileAction.setValue(PERCENTILE_DEFAULT);
         _percentilesAction.setEntries(dimensionNames);
-        _percentilesAction.setValueForAllEntries(99.f);
+        _percentilesAction.setValueForAllEntries(PERCENTILE_DEFAULT);
         break;
     }
 
