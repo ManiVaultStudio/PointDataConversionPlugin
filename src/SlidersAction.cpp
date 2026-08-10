@@ -144,7 +144,7 @@ QWidget* SlidersAction::getWidget(QWidget* parent, const std::int32_t& widgetFla
 
         const EntryData& d = _entryData.at(opt);
 
-        DecimalAction* slider = new DecimalAction(row, opt, d.min, d.max, d.value, EntryData::DEFAULT_DECIMALS);
+        DecimalAction* slider = new DecimalAction(row, opt, d.min, d.max, d.value, DEFAULT_DECIMALS);
         rowLayout->addWidget(slider->createLabelWidget(row));
         rowLayout->addWidget(slider->createWidget(row));
 

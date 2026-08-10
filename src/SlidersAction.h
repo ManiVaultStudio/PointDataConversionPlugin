@@ -26,15 +26,12 @@ namespace mv::gui {
 
     public:
         struct EntryData {
-            static constexpr float DEFAULT_MIN = 1.0f;
-            static constexpr float DEFAULT_MAX = 100.0f;
-            static constexpr float DEFAULT_VALUE = 5.0f;
-            static constexpr std::int32_t DEFAULT_DECIMALS = 2;
-
-            float min = DEFAULT_MIN;
-            float max = DEFAULT_MAX;
-            float value = DEFAULT_VALUE;
+            float min = 0.f;
+            float max = 100.f;
+            float value = 1.f;
         };
+
+        static constexpr std::int32_t DEFAULT_DECIMALS = 2;
 
     public:
         explicit SlidersAction(QObject* parent, const QString& title);

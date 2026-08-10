@@ -125,13 +125,16 @@ public:
     void createPluginAndTransform(const PointDataConversionPlugin::Conversion& type, const mv::Dataset<mv::DatasetImpl>& inputDataset) const;
 
 private:
-    [[nodiscard]] std::vector<float> getConversionSetting() const;
+    [[nodiscard]] std::vector<float> getConversionSetting(const PointDataConversionPlugin::Conversion& conversion) const;
 
-    void setConfigDialogDefaultSettings(const PointDataConversionPlugin::Conversion& type);
+    void setConfigDialogDefaultSettings(const PointDataConversionPlugin::Conversion& type, const QStringList& dimensionNames);
 
 private:
     mv::gui::ToggleAction  _sameChannelSettingAction;
 
-    mv::gui::DecimalAction _singleDecimalSettingAction;
-    mv::gui::SlidersAction _channelWiseDecimalAction;
+    mv::gui::DecimalAction _arcSinFactorAction;
+    mv::gui::SlidersAction _arcSinFactorsAction;
+
+    mv::gui::DecimalAction _percentileAction;
+    mv::gui::SlidersAction _percentilesAction;
 };
