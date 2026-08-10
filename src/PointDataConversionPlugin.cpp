@@ -185,7 +185,7 @@ PointDataConversionPluginFactory::PointDataConversionPluginFactory() :
             if (!allEqual)
                 return;
 
-            _channelWiseDecimalAction.setValueForAllEntries(value);        // TODO: fix crash on multiple same transformations, e.g. with clamp
+            _channelWiseDecimalAction.setValueForAllEntries(value);
         });
 
 }

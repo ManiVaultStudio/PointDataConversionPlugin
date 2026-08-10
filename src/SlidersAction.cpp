@@ -131,24 +131,22 @@ QWidget* SlidersAction::getWidget(QWidget* parent, const std::int32_t& widgetFla
     auto* layout = new QVBoxLayout(container);
     layout->setContentsMargins(4, 4, 4, 4);
 
-    const bool disableAll = _sliderList == nullptr && widgetFlags == WidgetFlag::DisableOnFirstOpen;
-
     _sliderList = new QListWidget(container);
     _sliderList->setSelectionMode(QAbstractItemView::NoSelection);
     layout->addWidget(_sliderList);
 
     for (const QString& opt : _entries) {
-        auto* item = new QListWidgetItem(_sliderList);
+        auto* item = new QListWidgetItem();
 
-        QWidget* row = new QWidget(_sliderList);
+        QWidget* row = new QWidget();
         QHBoxLayout* rowLayout = new QHBoxLayout(row);
         rowLayout->setContentsMargins(2, 2, 2, 2);
 
         const EntryData& d = _entryData.at(opt);
 
         DecimalAction* slider = new DecimalAction(row, opt, d.min, d.max, d.value, EntryData::DEFAULT_DECIMALS);
-        rowLayout->addWidget(slider->createLabelWidget(container));
-        rowLayout->addWidget(slider->createWidget(container));
+        rowLayout->addWidget(slider->createLabelWidget(row));
+        rowLayout->addWidget(slider->createWidget(row));
 
         _sliderList->addItem(item);
         _sliderList->setItemWidget(item, row);
@@ -159,7 +157,7 @@ QWidget* SlidersAction::getWidget(QWidget* parent, const std::int32_t& widgetFla
             });
     }
 
-    if (disableAll)
+    if (widgetFlags == WidgetFlag::DisableOnFirstOpen)
         setAllSlidersEnabled(false);
 
     return container;
