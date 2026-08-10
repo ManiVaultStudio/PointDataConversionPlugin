@@ -40,9 +40,6 @@ public:
      */
     PointDataConversionPlugin(const mv::plugin::PluginFactory* factory);
 
-    /** Destructor */
-    ~PointDataConversionPlugin() override = default;
-    
     /** Initialization is called when the plugin is first instantiated. */
     void init() override {}
 
@@ -93,9 +90,6 @@ public:
     /** Default constructor */
     PointDataConversionPluginFactory();
 
-    /** Destructor */
-    ~PointDataConversionPluginFactory() override {}
-    
     /** Creates an instance of the point data conversion plugin */
     PointDataConversionPlugin* produce() override;
 
@@ -130,7 +124,7 @@ public:
     void createPluginAndTransform(const PointDataConversionPlugin::Conversion& type, const mv::Dataset<mv::DatasetImpl>& inputDataset) const;
 
 private:
-    std::vector<float> getConversionSetting() const;
+    [[nodiscard]] std::vector<float> getConversionSetting() const;
 
     void setConfigDialogDefaultSettings(const PointDataConversionPlugin::Conversion& type);
 
