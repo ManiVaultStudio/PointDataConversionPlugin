@@ -30,6 +30,13 @@ const QMap<PointDataConversionPlugin::Conversion, QString> PointDataConversionPl
     { Conversion::ClampMax, "Clamp (max)" }
     });
 
+static constexpr float COFACTOR_MIN = 1.0f;
+static constexpr float COFACTOR_MAX = 100.0f;
+static constexpr float COFACTOR_DEFAULT = 5.0f;
+static constexpr float PERCENTILE_MIN = 0.0f;
+static constexpr float PERCENTILE_MAX = 100.0f;
+static constexpr float PERCENTILE_DEFAULT = 99.0f;
+
 PointDataConversionPlugin::PointDataConversionPlugin(const mv::plugin::PluginFactory* factory) :
     TransformationPlugin(factory)
 {
@@ -65,7 +72,7 @@ void PointDataConversionPlugin::transform()
         // Some conversions require a preparation step
         switch (_conversion)
         {
-        case Conversion::Log2: break;
+        case Conversion::Log2: [[fallthrough]];
         case Conversion::Log1p: break;
         case Conversion::ArcSinh:  
             
@@ -167,33 +174,50 @@ QString PointDataConversionPlugin::getConversionName(const Conversion& conversio
 
 PointDataConversionPluginFactory::PointDataConversionPluginFactory() :
     _sameChannelSettingAction(this, "Same factor", true),
-    _singleDecimalSettingAction(this, "Factor"),
-    _channelWiseDecimalAction(this, "Factors")
+    _arcSinFactorAction(this, "Cofactor"),
+    _arcSinFactorsAction(this, "Cofactors"),
+    _percentileAction(this, "Percentile"),
+    _percentilesAction(this, "Percentiles")
 {
-    _singleDecimalSettingAction.setToolTip("Apply the same cofactors to each channel.");
-    _channelWiseDecimalAction.setToolTip("Apply different cofactors to each channel.");
+    _arcSinFactorAction.setToolTip("Apply the same cofactor to each channel.");
+    _arcSinFactorsAction.setToolTip("Apply different cofactors to each channel.");
+    _percentileAction.setToolTip("Apply the same percentile to each channel.");
+    _percentilesAction.setToolTip("Apply different percentiles to each channel.");
 
-    _singleDecimalSettingAction.initialize(SlidersAction::EntryData::DEFAULT_MIN, SlidersAction::EntryData::DEFAULT_MAX,
-        SlidersAction::EntryData::DEFAULT_VALUE, SlidersAction::EntryData::DEFAULT_DECIMALS);
+    _arcSinFactorAction.initialize(COFACTOR_MIN, COFACTOR_MAX, COFACTOR_DEFAULT, SlidersAction::DEFAULT_DECIMALS);
+    _percentileAction.initialize(PERCENTILE_MIN, PERCENTILE_MAX, PERCENTILE_DEFAULT, SlidersAction::DEFAULT_DECIMALS);
 
     connect(&_sameChannelSettingAction, &ToggleAction::toggled, this, [&](bool toggled)
         {
-            _singleDecimalSettingAction.setEnabled(_sameChannelSettingAction.isChecked());
-            _channelWiseDecimalAction.setAllSlidersEnabled(!_sameChannelSettingAction.isChecked());
+            _arcSinFactorAction.setEnabled(_sameChannelSettingAction.isChecked());
+            _arcSinFactorsAction.setAllSlidersEnabled(!_sameChannelSettingAction.isChecked());
+
+            _percentileAction.setEnabled(_sameChannelSettingAction.isChecked());
+            _percentilesAction.setAllSlidersEnabled(!_sameChannelSettingAction.isChecked());
         });
 
-    connect(&_singleDecimalSettingAction, &DecimalAction::valueChanged, this, [&](float value)
-        {
-            const auto sliderValues = _channelWiseDecimalAction.getValues();
-            
-            const bool allEqual = !sliderValues.empty() &&
+    auto passValueToMultiChannelSettings = [](const float value, mv::gui::SlidersAction& multiChannelAction)
+    {
+        const auto sliderValues = multiChannelAction.getValues();
+
+        const bool allEqual = !sliderValues.empty() &&
             std::all_of(sliderValues.cbegin() + 1, sliderValues.cend(),
                 [&](const float v) { return std::abs(v - sliderValues.front()) < 0.0001f; });
 
-            if (!allEqual)
-                return;
+        if (!allEqual)
+            return;
 
-            _channelWiseDecimalAction.setValueForAllEntries(value);
+        multiChannelAction.setValueForAllEntries(value);
+    };
+
+    connect(&_arcSinFactorAction, &DecimalAction::valueChanged, this, [&, passValueToMultiChannelSettings](const float value)
+        {
+            passValueToMultiChannelSettings(value, _arcSinFactorsAction);
+        });
+
+    connect(&_percentileAction, &DecimalAction::valueChanged, this, [&, passValueToMultiChannelSettings](const float value)
+        {
+            passValueToMultiChannelSettings(value, _percentilesAction);
         });
 
 }
@@ -203,12 +227,36 @@ PointDataConversionPlugin* PointDataConversionPluginFactory::produce()
     return new PointDataConversionPlugin(this);
 }
 
-std::vector<float> PointDataConversionPluginFactory::getConversionSetting() const
+std::vector<float> PointDataConversionPluginFactory::getConversionSetting(const PointDataConversionPlugin::Conversion& conversion) const
 {
-    if (_sameChannelSettingAction.isChecked())
-        return { _singleDecimalSettingAction.getValue() };
+    std::vector<float> setting = { -1.f };
 
-    return _channelWiseDecimalAction.getValues();
+    switch (conversion)
+    {
+    case PointDataConversionPlugin::Conversion::Log2:
+        [[fallthrough]];
+    case PointDataConversionPlugin::Conversion::Log1p:
+        break;
+
+    case PointDataConversionPlugin::Conversion::ArcSinh:
+    {
+        setting = (_sameChannelSettingAction.isChecked() ) 
+            ? std::vector<float>{ _arcSinFactorAction.getValue() } 
+            : _arcSinFactorsAction.getValues();
+
+        break;
+    }
+    case PointDataConversionPlugin::Conversion::ClampMax:
+    {
+        setting = (_sameChannelSettingAction.isChecked())
+            ? std::vector<float>{ _percentileAction.getValue() }
+            : _percentilesAction.getValues();
+
+        break;
+    }
+    }
+
+    return setting;
 }
 
 PluginTriggerActions PointDataConversionPluginFactory::getPluginTriggerActions(const mv::Datasets& datasets) const
@@ -268,9 +316,7 @@ PluginTriggerActions PointDataConversionPluginFactory::getPluginTriggerActions(c
 
 WidgetAction* PointDataConversionPluginFactory::getConfigurationAction(const PointDataConversionPlugin::Conversion& type)
 {
-    const auto createGroupAction = [this]() -> GroupAction* {
-
-        _channelWiseDecimalAction.initialize({});
+    const auto createGroupAction = [this](mv::gui::DecimalAction& singleDecimalSettingAction) -> GroupAction* {
         _sameChannelSettingAction.setChecked(true);
 
         auto groupAction = new GroupAction(this, "PointDataConversionGroupAction");
@@ -278,13 +324,13 @@ WidgetAction* PointDataConversionPluginFactory::getConfigurationAction(const Poi
         groupAction->setText("Settings");
         groupAction->setToolTip("Data conversion settings");
         groupAction->setLabelSizingType(GroupAction::LabelSizingType::Auto);
-        groupAction->addAction(&_singleDecimalSettingAction);
+        groupAction->addAction(&singleDecimalSettingAction);
 
         return groupAction;
     };
 
     WidgetAction* configAction = nullptr;
-    setConfigDialogDefaultSettings(type);
+    setConfigDialogDefaultSettings(type, {});
 
     switch (type)
     {
@@ -294,10 +340,13 @@ WidgetAction* PointDataConversionPluginFactory::getConfigurationAction(const Poi
             break;
 
         case PointDataConversionPlugin::Conversion::ArcSinh: 
-            [[fallthrough]];
+        {
+            configAction = createGroupAction(_arcSinFactorAction);
+            break;
+        }
         case PointDataConversionPlugin::Conversion::ClampMax:
         {
-            configAction = createGroupAction();
+            configAction = createGroupAction(_percentileAction);
             break;
         }
     }
@@ -307,12 +356,11 @@ WidgetAction* PointDataConversionPluginFactory::getConfigurationAction(const Poi
 
 void PointDataConversionPluginFactory::openConfigDialog(const PointDataConversionPlugin::Conversion& type, const mv::Dataset<mv::DatasetImpl>& inputDataset)
 {
-    _sameChannelSettingAction.setChecked(true);
     const std::vector<QString> dimNamesVec = mv::Dataset<Points>(inputDataset)->getDimensionNames();
     const QStringList dimNamesList(dimNamesVec.begin(), dimNamesVec.end());
-    _channelWiseDecimalAction.initialize(dimNamesList);
 
-    setConfigDialogDefaultSettings(type);
+    setConfigDialogDefaultSettings(type, dimNamesList);
+    _sameChannelSettingAction.setChecked(true);
 
     switch (type)
     {
@@ -325,7 +373,7 @@ void PointDataConversionPluginFactory::openConfigDialog(const PointDataConversio
     case PointDataConversionPlugin::Conversion::ArcSinh:
     {
         ConversionDialog inputDialog(nullptr, PointDataConversionPlugin::CONVERSIONS[PointDataConversionPlugin::Conversion::ArcSinh],
-            &_sameChannelSettingAction, &_singleDecimalSettingAction, &_channelWiseDecimalAction);
+            &_sameChannelSettingAction, &_arcSinFactorAction, &_arcSinFactorsAction);
         inputDialog.setModal(true);
         if (inputDialog.exec() == QDialog::Accepted)
             createPluginAndTransform(type, inputDataset);
@@ -335,7 +383,7 @@ void PointDataConversionPluginFactory::openConfigDialog(const PointDataConversio
     case PointDataConversionPlugin::Conversion::ClampMax:
     {
         ConversionDialog inputDialog(nullptr, PointDataConversionPlugin::CONVERSIONS[PointDataConversionPlugin::Conversion::ClampMax],
-            &_sameChannelSettingAction, &_singleDecimalSettingAction, &_channelWiseDecimalAction);
+            &_sameChannelSettingAction, &_percentileAction, &_percentilesAction);
         inputDialog.setModal(true);
         if (inputDialog.exec() == QDialog::Accepted)
             createPluginAndTransform(type, inputDataset);
@@ -346,7 +394,7 @@ void PointDataConversionPluginFactory::openConfigDialog(const PointDataConversio
 
 }
 
-void PointDataConversionPluginFactory::setConfigDialogDefaultSettings(const PointDataConversionPlugin::Conversion& type)
+void PointDataConversionPluginFactory::setConfigDialogDefaultSettings(const PointDataConversionPlugin::Conversion& type, const QStringList& dimensionNames)
 {
     switch (type)
     {
@@ -357,18 +405,16 @@ void PointDataConversionPluginFactory::setConfigDialogDefaultSettings(const Poin
 
     case PointDataConversionPlugin::Conversion::ArcSinh:
     {
-        _singleDecimalSettingAction.setText("Cofactor");
-        _singleDecimalSettingAction.setValue(5.f);
-        _channelWiseDecimalAction.setText("Cofactors");
-        _channelWiseDecimalAction.setValueForAllEntries(99.f);
+        _arcSinFactorAction.setValue(COFACTOR_DEFAULT);
+        _arcSinFactorsAction.setEntries(dimensionNames);
+        _arcSinFactorsAction.setValueForAllEntries(COFACTOR_DEFAULT);
         break;
     }
     case PointDataConversionPlugin::Conversion::ClampMax:
     {
-        _singleDecimalSettingAction.setText("Percentile");
-        _singleDecimalSettingAction.setValue(99.f);
-        _channelWiseDecimalAction.setText("Percentiles");
-        _channelWiseDecimalAction.setValueForAllEntries(99.f);
+        _percentileAction.setValue(PERCENTILE_DEFAULT);
+        _percentilesAction.setEntries(dimensionNames);
+        _percentilesAction.setValueForAllEntries(PERCENTILE_DEFAULT);
         break;
     }
 
@@ -381,7 +427,7 @@ void PointDataConversionPluginFactory::createPluginAndTransform(const PointDataC
 
     pluginInstance->setInputDataset(inputDataset);
     pluginInstance->setConversion(type);
-    pluginInstance->setConversionSetting(getConversionSetting());
+    pluginInstance->setConversionSetting(getConversionSetting(type));
     pluginInstance->transform();
 
 }
