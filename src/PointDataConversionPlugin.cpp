@@ -288,17 +288,13 @@ WidgetAction* PointDataConversionPluginFactory::getConfigurationAction(const Poi
 
     switch (type)
     {
-        case PointDataConversionPlugin::Conversion::Log2:
-            break;
+        case PointDataConversionPlugin::Conversion::Log2: 
+            [[fallthrough]];
         case PointDataConversionPlugin::Conversion::Log1p:
             break;
 
-        case PointDataConversionPlugin::Conversion::ArcSinh:
-        {
-            configAction = createGroupAction();
-            break;
-        }
-
+        case PointDataConversionPlugin::Conversion::ArcSinh: 
+            [[fallthrough]];
         case PointDataConversionPlugin::Conversion::ClampMax:
         {
             configAction = createGroupAction();
@@ -320,9 +316,8 @@ void PointDataConversionPluginFactory::openConfigDialog(const PointDataConversio
 
     switch (type)
     {
-    case PointDataConversionPlugin::Conversion::Log2:
-        createPluginAndTransform(type, inputDataset);
-        break;
+    case PointDataConversionPlugin::Conversion::Log2: 
+        [[fallthrough]];
     case PointDataConversionPlugin::Conversion::Log1p:
         createPluginAndTransform(type, inputDataset);
         break;
@@ -355,8 +350,8 @@ void PointDataConversionPluginFactory::setConfigDialogDefaultSettings(const Poin
 {
     switch (type)
     {
-    case PointDataConversionPlugin::Conversion::Log2:
-        break;
+    case PointDataConversionPlugin::Conversion::Log2: 
+        [[fallthrough]];
     case PointDataConversionPlugin::Conversion::Log1p:
         break;
 
