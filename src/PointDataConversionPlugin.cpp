@@ -25,6 +25,7 @@ using namespace mv::gui;
 
 const QMap<PointDataConversionPlugin::Conversion, QString> PointDataConversionPlugin::CONVERSIONS = QMap<Conversion, QString>({
     { Conversion::Log2, "Log2" },
+    { Conversion::Log1p, "Log1p" },
     { Conversion::ArcSinh, "Arcsinh" },
     { Conversion::ClampMax, "Clamp (max)" }
     });
@@ -65,6 +66,7 @@ void PointDataConversionPlugin::transform()
         switch (_conversion)
         {
         case Conversion::Log2: break;
+        case Conversion::Log1p: break;
         case Conversion::ArcSinh:  
             
             if (_conversionSetting.size() == 1)
@@ -102,6 +104,12 @@ void PointDataConversionPlugin::transform()
                 {
                 case Conversion::Log2:
                     point[dimensionIndex] = std::log2f(point[dimensionIndex] + 1.0f);
+                    break;
+
+                case Conversion::Log1p:
+                    // more precise than the expression std::log(1 + num) if num is close to zero,
+                    // see https://en.cppreference.com/cpp/numeric/math/log1p 
+                    point[dimensionIndex] = std::log1pf(point[dimensionIndex]);
                     break;
 
                 case Conversion::ArcSinh:
@@ -221,6 +229,7 @@ PluginTriggerActions PointDataConversionPluginFactory::getPluginTriggerActions(c
             };
 
         addPluginTriggerAction(PointDataConversionPlugin::Conversion::Log2);
+        addPluginTriggerAction(PointDataConversionPlugin::Conversion::Log1p);
         addPluginTriggerAction(PointDataConversionPlugin::Conversion::ArcSinh);
         addPluginTriggerAction(PointDataConversionPlugin::Conversion::ClampMax);
     }
@@ -249,6 +258,7 @@ PluginTriggerActions PointDataConversionPluginFactory::getPluginTriggerActions(c
         };
 
         addPluginTriggerAction(PointDataConversionPlugin::Conversion::Log2);
+        addPluginTriggerAction(PointDataConversionPlugin::Conversion::Log1p);
         addPluginTriggerAction(PointDataConversionPlugin::Conversion::ArcSinh);
         addPluginTriggerAction(PointDataConversionPlugin::Conversion::ClampMax);
     }
@@ -279,6 +289,8 @@ WidgetAction* PointDataConversionPluginFactory::getConfigurationAction(const Poi
     switch (type)
     {
         case PointDataConversionPlugin::Conversion::Log2:
+            break;
+        case PointDataConversionPlugin::Conversion::Log1p:
             break;
 
         case PointDataConversionPlugin::Conversion::ArcSinh:
@@ -311,6 +323,9 @@ void PointDataConversionPluginFactory::openConfigDialog(const PointDataConversio
     case PointDataConversionPlugin::Conversion::Log2:
         createPluginAndTransform(type, inputDataset);
         break;
+    case PointDataConversionPlugin::Conversion::Log1p:
+        createPluginAndTransform(type, inputDataset);
+        break;
 
     case PointDataConversionPlugin::Conversion::ArcSinh:
     {
@@ -341,6 +356,8 @@ void PointDataConversionPluginFactory::setConfigDialogDefaultSettings(const Poin
     switch (type)
     {
     case PointDataConversionPlugin::Conversion::Log2:
+        break;
+    case PointDataConversionPlugin::Conversion::Log1p:
         break;
 
     case PointDataConversionPlugin::Conversion::ArcSinh:

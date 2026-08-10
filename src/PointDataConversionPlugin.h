@@ -26,6 +26,7 @@ public:
     /** Point data conversion type */
     enum class Conversion {
         Log2,       /** log2(value+1) */
+        Log1p,      /** ln(value+1) */
         ArcSinh,     /** asinh(value/factor), inverse hyperbolic sine */
         ClampMax,   /** clamp (max) value to a percentile of its respective dimension */
     };
